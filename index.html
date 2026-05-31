@@ -138,6 +138,8 @@
   .wcheck{width:22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:12px; font-weight:700; flex-shrink:0; color:var(--sage)}
   .wdone .wcheck{background:var(--sage); color:#fff; border-color:var(--sage)}
   .wgo{margin-left:auto; color:var(--coral-deep); font-weight:700}
+  .obs-row td{padding-top:0; padding-bottom:12px; font-size:13px; color:var(--ink-soft); border-bottom:1px solid var(--line-2); line-height:1.45}
+  .obs-tag{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--gold); background:#f6ecd2; padding:2px 7px; border-radius:6px; margin-right:6px; vertical-align:middle}
   .inf-rowbtns{display:flex; gap:6px; flex-shrink:0}
   .inf-stat{display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--line-2)}
   .inf-foll{font-family:"Fraunces",serif; font-size:26px; font-weight:600; line-height:1}
@@ -766,7 +768,7 @@ function viewCamp(){
       <td><div class="rowbtns">
         <button class="iconbtn" onclick="openCamp('${c.id}')">✎</button>
         <button class="iconbtn" onclick="delCamp('${c.id}')">🗑</button>
-      </div></td></tr>`;}).join(''):`<tr><td colspan="8" class="empty">Nenhuma campanha ainda. Crie a primeira com o botão acima.</td></tr>`}
+      </div></td></tr>${c.notas?`<tr class="obs-row"><td colspan="8"><span class="obs-tag">Obs.</span> ${esc(c.notas)}</td></tr>`:''}`;}).join(''):`<tr><td colspan="8" class="empty">Nenhuma campanha ainda. Crie a primeira com o botão acima.</td></tr>`}
     </tbody></table></div></div>`;
 }
 async function delCamp(id){ if(!confirm('Remover campanha?'))return; DB.campaigns=DB.campaigns.filter(c=>c.id!==id); render(); await sbDelete('campaigns',id); }
@@ -786,7 +788,7 @@ function openCamp(id){
       <div style="grid-column:1/3"><label class="fld">Influenciadores</label>
         <div class="chk-grid">${DB.influencers.map(i=>`<label class="chk"><input type="checkbox" value="${i.id}" ${sel.has(i.id)?'checked':''}> ${esc(i.ig)}</label>`).join('')}</div>
       </div>
-      <div style="grid-column:1/3"><label class="fld">Notas (entregáveis, briefing…)</label><textarea id="k_nt" rows="2">${esc(c.notas)}</textarea></div>
+      <div style="grid-column:1/3"><label class="fld">Observações</label><textarea id="k_nt" rows="4" placeholder="Escreva livremente o que for importante: combinados, detalhes do briefing, pendências, o que prestar atenção…">${esc(c.notas)}</textarea></div>
     </div></div>
     <div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveCamp('${id||''}')">Salvar</button></div>`);
 }
