@@ -4,35 +4,39 @@
 <title>Phosphoros · Gestão de talentos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 110'%3E%3Cpath d='M22 48 Q60 18 98 48' stroke='%23C8A96B' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='46' r='9.5' stroke='%230D1117' stroke-width='6' fill='none'/%3E%3Cline x1='34' y1='72' x2='86' y2='72' stroke='%230D1117' stroke-width='6' stroke-linecap='round'/%3E%3Cline x1='42' y1='88' x2='78' y2='88' stroke='%23C8A96B' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#F6F1E9; --paper:#FFFDF9; --ink:#211C17; --ink-soft:#5C5247;
-    --line:#E4DBCD; --line-2:#EFE8DC;
-    --coral:#D85A3A; --coral-deep:#B8431F; --coral-soft:#F6E2D8;
-    --sage:#5B6B4F; --sage-soft:#E5EADD;
-    --gold:#C29A3B; --plum:#7A4A63;
-    --shadow:0 1px 2px rgba(33,28,23,.04), 0 8px 28px -16px rgba(33,28,23,.22);
+    --bg:#F3F1E9; --paper:#FBFAF5; --cream:#F3F1E9; --ink:#0D1117; --charcoal:#1A1F29; --ink-soft:#6E6558;
+    --line:#E4DDCE; --line-2:#EFE9DC;
+    --coral:#C8A96B; --coral-deep:#A8843F; --coral-soft:#F2E8D2;   /* acento = GOLD */
+    --primary:#0D1117; --primary-h:#1F2530;                         /* botões = ink */
+    --sage:#5B6B4F; --sage-soft:#E7EBE0;
+    --gold:#BC8A36; --plum:#7A4A63; --clay:#AE5638;
+    --shadow:0 1px 2px rgba(13,17,23,.04), 0 10px 30px -18px rgba(13,17,23,.20);
   }
   *{box-sizing:border-box}
   html,body{margin:0}
   body{
     background:
-      radial-gradient(120% 80% at 100% 0%, #FBEFE6 0%, transparent 55%),
-      radial-gradient(90% 70% at 0% 100%, #EEF0E6 0%, transparent 50%),
+      radial-gradient(110% 70% at 100% 0%, #F7F2E7 0%, transparent 55%),
       var(--bg);
-    color:var(--ink); font-family:"Hanken Grotesk",sans-serif;
+    color:var(--ink); font-family:"Inter",sans-serif;
     font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
     min-height:100vh;
   }
   .wrap{max-width:1180px; margin:0 auto; padding:22px 22px 80px}
-  /* ---------- top bar ---------- */
-  header.top{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:6px}
-  .brand{display:flex; align-items:baseline; gap:12px}
-  .brand h1{font-family:"Fraunces",serif; font-weight:600; font-size:30px; letter-spacing:-.01em; margin:0}
+  /* ---------- top bar (escuro) ---------- */
+  header.top{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; background:var(--ink); color:var(--cream); border-radius:14px; padding:12px 20px; margin-bottom:16px}
+  .brand{display:flex; align-items:center; gap:11px}
+  .brand h1{font-family:"Cormorant Garamond",serif; font-weight:600; font-size:26px; letter-spacing:.14em; text-transform:uppercase; margin:0; color:var(--cream); padding-left:.14em}
   .brand .dot{color:var(--coral)}
-  .brand small{color:var(--ink-soft); font-size:12.5px; letter-spacing:.16em; text-transform:uppercase}
+  .brand small{color:#9C958A; font-size:11px; letter-spacing:.16em; text-transform:uppercase}
+  header.top .muted{color:#9C958A}
+  header.top .iconbtn{background:transparent; border-color:#333B49; color:#D7D1C4}
+  header.top .iconbtn:hover{border-color:var(--coral); color:var(--coral)}
   .save-pill{font-size:11.5px; color:var(--sage); background:var(--sage-soft); padding:5px 11px; border-radius:999px; font-weight:600; letter-spacing:.02em}
   .save-pill.warn{color:#8a5a00; background:#f6ecd2}
   /* ---------- nav ---------- */
@@ -48,9 +52,9 @@
   /* ---------- generic ---------- */
   .card{background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow)}
   .muted{color:var(--ink-soft)}
-  h2.sec{font-family:"Fraunces",serif; font-weight:600; font-size:21px; margin:0 0 2px}
-  button.btn{appearance:none; cursor:pointer; font:inherit; font-weight:600; border-radius:10px; padding:9px 15px; border:1px solid var(--coral); background:var(--coral); color:#fff; transition:.15s; font-size:13.5px}
-  button.btn:hover{background:var(--coral-deep); border-color:var(--coral-deep)}
+  h2.sec{font-family:"Cormorant Garamond",serif; font-weight:600; font-size:24px; margin:0 0 2px}
+  button.btn{appearance:none; cursor:pointer; font:inherit; font-weight:600; border-radius:10px; padding:9px 15px; border:1px solid var(--primary); background:var(--primary); color:var(--cream); transition:.15s; font-size:13.5px}
+  button.btn:hover{background:var(--primary-h); border-color:var(--primary-h)}
   button.ghost{background:none; color:var(--ink); border:1px solid var(--line)}
   button.ghost:hover{background:#fff; border-color:var(--ink-soft)}
   input,select,textarea{font:inherit; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:9px; padding:8px 10px; width:100%}
@@ -60,7 +64,7 @@
   /* ---------- dashboard ---------- */
   .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
   .stat{padding:16px 18px}
-  .stat .k{font-family:"Fraunces",serif; font-size:30px; font-weight:600; line-height:1}
+  .stat .k{font-family:"Cormorant Garamond",serif; font-size:34px; font-weight:600; line-height:1}
   .stat .l{font-size:12px; color:var(--ink-soft); margin-top:6px; letter-spacing:.04em; text-transform:uppercase}
   .stat .sub{font-size:12px; color:var(--coral-deep); margin-top:3px; font-weight:600}
   .two{display:grid; grid-template-columns:1.3fr 1fr; gap:14px; margin-top:14px}
@@ -111,7 +115,7 @@
   .due{font-size:12.5px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
   .due-ok{color:var(--ink)}
   .due-soon{color:var(--gold)}
-  .due-late{color:var(--coral-deep); font-weight:700}
+  .due-late{color:var(--clay); font-weight:700}
   .agenda-row{display:flex; align-items:center; gap:11px; padding:9px 0; border-bottom:1px solid var(--line-2); font-size:13.5px}
   .agenda-row:last-child{border-bottom:0}
   .agenda-tag{font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:3px 8px; border-radius:7px; flex-shrink:0}
@@ -142,7 +146,7 @@
   .obs-tag{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--gold); background:#f6ecd2; padding:2px 7px; border-radius:6px; margin-right:6px; vertical-align:middle}
   .inf-rowbtns{display:flex; gap:6px; flex-shrink:0}
   .inf-stat{display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--line-2)}
-  .inf-foll{font-family:"Fraunces",serif; font-size:26px; font-weight:600; line-height:1}
+  .inf-foll{font-family:"Cormorant Garamond",serif; font-size:30px; font-weight:600; line-height:1}
   .inf-niches{display:flex; flex-wrap:wrap; gap:4px; min-height:22px}
   .inf-foot{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto}
   /* ---------- modal ---------- */
@@ -150,16 +154,16 @@
   .scrim.on{display:flex}
   .modal{background:var(--paper); border-radius:18px; max-width:560px; width:100%; max-height:90vh; overflow:auto; box-shadow:0 30px 70px -20px rgba(33,28,23,.5)}
   .modal-h{padding:18px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:var(--paper)}
-  .modal-h h3{font-family:"Fraunces",serif; margin:0; font-size:19px; font-weight:600}
+  .modal-h h3{font-family:"Cormorant Garamond",serif; margin:0; font-size:19px; font-weight:600}
   .modal-b{padding:20px 22px}
   .modal-f{padding:14px 22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:10px; position:sticky; bottom:0; background:var(--paper)}
   /* ---------- matcher ---------- */
   .match-grid{display:grid; grid-template-columns:300px 1fr; gap:16px}
   .roster-card{display:flex; align-items:center; gap:12px; padding:11px 14px; border:1px solid var(--line); border-radius:12px; margin-bottom:9px}
   .roster-card:hover{border-color:var(--coral)}
-  .av{width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--coral),var(--gold)); display:grid; place-items:center; color:#fff; font-weight:700; font-size:14px; flex-shrink:0; font-family:"Fraunces",serif}
+  .av{width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--ink),var(--coral)); display:grid; place-items:center; color:#fff; font-weight:700; font-size:14px; flex-shrink:0; font-family:"Cormorant Garamond",serif}
   .pill-stat{display:flex; gap:20px; padding:14px 18px; background:var(--coral-soft); border-radius:12px; margin-bottom:14px; flex-wrap:wrap}
-  .pill-stat .k{font-family:"Fraunces",serif; font-size:22px; font-weight:600}
+  .pill-stat .k{font-family:"Cormorant Garamond",serif; font-size:22px; font-weight:600}
   .pill-stat .l{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--coral-deep)}
   .link{color:var(--coral-deep); cursor:pointer; font-weight:600; background:none; border:0; font:inherit; padding:0}
   .link:hover{text-decoration:underline}
@@ -169,10 +173,36 @@
     .grid-form{grid-template-columns:1fr}
     .hide-sm{display:none}
   }
-  .gate{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:22px}
-  .gate-card{width:100%; max-width:380px; padding:30px 28px}
-  .au-msg{font-size:12.5px; color:var(--sage); margin-top:10px; min-height:16px; line-height:1.4}
-  .au-msg.err{color:var(--coral-deep)}
+  .gate{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:22px;
+    background:radial-gradient(120% 80% at 50% -10%, #161C26 0%, var(--ink) 60%)}
+  .gate-card{width:100%; max-width:382px; padding:34px 30px; background:#141A24; border:1px solid #262E3B; color:var(--cream); box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
+  .gate-card .fld{color:#9C958A}
+  .gate-card input{background:#0F151E; border-color:#2A3340; color:var(--cream)}
+  .gate-card input::placeholder{color:#5E6470}
+  .gate-card .muted{color:#9C958A}
+  .gate-card .btn{background:var(--coral); border-color:var(--coral); color:var(--ink)}
+  .gate-card .btn:hover{background:var(--coral-deep); border-color:var(--coral-deep)}
+  .gate-card .btn.ghost{background:transparent; color:var(--cream); border-color:#2A3340}
+  .gate-card .btn.ghost:hover{background:#1B2330; border-color:#3A4150}
+  .gate-card .link{color:var(--coral)}
+  .au-msg{font-size:12.5px; color:var(--coral); margin-top:10px; min-height:16px; line-height:1.4}
+  .au-msg.err{color:#E08A6A}
+  .ph-logo{text-align:center; margin-bottom:18px}
+  .ph-word{font-family:"Cormorant Garamond",serif; font-weight:600; font-size:30px; letter-spacing:.18em; text-transform:uppercase; margin:10px 0 2px; color:var(--cream); padding-left:.18em}
+  .ph-tag{color:var(--coral); font-size:11.5px; letter-spacing:.05em}
+  .phmark .ph-arc{stroke:var(--coral); stroke-width:3; fill:none; stroke-linecap:round}
+  .phmark .ph-iris{stroke:var(--cream); stroke-width:3; fill:none}
+  .phmark .ph-pupil{fill:var(--coral)}
+  .phmark .ph-l{stroke:var(--cream); stroke-width:3; stroke-linecap:round; transform-box:fill-box; transform-origin:center}
+  .phmark .ph-l1{stroke:var(--coral)}
+  .phmark.dark .ph-iris,.phmark.dark .ph-l{stroke:var(--ink)}
+  .phmark.anim .ph-l0{animation:phA 3.4s ease-in-out infinite}
+  .phmark.anim .ph-l1{animation:phB 3.4s ease-in-out infinite}
+  .phmark.anim .ph-l2{animation:phC 3.4s ease-in-out infinite}
+  @keyframes phA{0%,100%{transform:translate(7px,-6px) rotate(-9deg); opacity:.5}38%,80%{transform:none; opacity:1}}
+  @keyframes phB{0%,100%{transform:translate(-9px,3px) rotate(7deg); opacity:.5}42%,80%{transform:none; opacity:1}}
+  @keyframes phC{0%,100%{transform:translate(5px,7px) rotate(-5deg); opacity:.5}46%,80%{transform:none; opacity:1}}
+  @media(prefers-reduced-motion:reduce){.phmark.anim .ph-l0,.phmark.anim .ph-l1,.phmark.anim .ph-l2{animation:none}}
 </style>
 
 <div id="gate" class="gate" style="display:none"></div>
@@ -180,6 +210,7 @@
 <div id="appwrap" class="wrap" style="display:none">
   <header class="top">
     <div class="brand">
+      <svg class="phmark" width="26" height="24" viewBox="0 0 120 110" aria-hidden="true"><path class="ph-arc" d="M22 48 Q60 18 98 48"/><circle class="ph-iris" cx="60" cy="46" r="9.5"/><circle class="ph-pupil" cx="60" cy="46" r="2.6"/><line class="ph-l ph-l0" x1="34" y1="70" x2="86" y2="70"/><line class="ph-l ph-l1" x1="40" y1="80" x2="80" y2="80"/><line class="ph-l ph-l2" x1="46" y1="90" x2="74" y2="90"/></svg>
       <h1>Phosphoros<span class="dot">.</span></h1>
       <small>gestão de talentos</small>
     </div>
@@ -321,11 +352,12 @@ async function afterLogin(){
   await sbLoadAll(); render();
   if(!booted){ subscribeRealtime(); booted=true; }
 }
+function phMark(size,animated){ return `<svg class="phmark ${animated?'anim':''}" width="${size}" height="${Math.round(size*110/120)}" viewBox="0 0 120 110" aria-hidden="true"><path class="ph-arc" d="M22 48 Q60 18 98 48"/><circle class="ph-iris" cx="60" cy="46" r="9.5"/><circle class="ph-pupil" cx="60" cy="46" r="2.6"/><line class="ph-l ph-l0" x1="34" y1="70" x2="86" y2="70"/><line class="ph-l ph-l1" x1="40" y1="80" x2="80" y2="80"/><line class="ph-l ph-l2" x1="46" y1="90" x2="74" y2="90"/></svg>`; }
 function showOnboard(){
   const a=document.getElementById('appwrap'); if(a)a.style.display='none';
   const g=document.getElementById('gate'); g.style.display='';
   g.innerHTML=`<div class="gate-card card">
-    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Phosphoros<span class="dot">.</span></h1></div>
+    <div class="ph-logo">${phMark(78,true)}<div class="ph-word">Phosphoros<span class="dot">.</span></div><div class="ph-tag">Clareza para quem gerencia talentos</div></div>
     <p class="muted" style="text-align:center;margin:0 0 18px;font-size:13.5px">Bem-vinda! Como você quer começar?</p>
     <label class="fld">Criar a sua agência</label>
     <input id="ob_name" placeholder="Nome da sua agência">
@@ -361,7 +393,7 @@ function showLogin(){
   const a=document.getElementById('appwrap'); if(a)a.style.display='none';
   const g=document.getElementById('gate'); g.style.display='';
   g.innerHTML=`<div class="gate-card card">
-    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Phosphoros<span class="dot">.</span></h1></div>
+    <div class="ph-logo">${phMark(78,true)}<div class="ph-word">Phosphoros<span class="dot">.</span></div><div class="ph-tag">Clareza para quem gerencia talentos</div></div>
     <p class="muted" style="text-align:center;margin:0 0 18px;font-size:13.5px">Entre para acessar o painel da agência</p>
     <label class="fld">E-mail</label><input id="au_e" type="email" placeholder="voce@email.com">
     <label class="fld" style="margin-top:11px">Senha</label><input id="au_p" type="password" placeholder="mínimo 6 caracteres">
@@ -390,7 +422,7 @@ function showSetup(){
   const a=document.getElementById('appwrap'); if(a)a.style.display='none';
   const g=document.getElementById('gate'); g.style.display='';
   g.innerHTML=`<div class="gate-card card">
-    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Phosphoros<span class="dot">.</span></h1></div>
+    <div class="ph-logo">${phMark(78,true)}<div class="ph-word">Phosphoros<span class="dot">.</span></div><div class="ph-tag">Clareza para quem gerencia talentos</div></div>
     <p class="muted" style="text-align:center;margin:0 0 16px;font-size:13.5px">Conexão do app (só o dono faz isto)</p>
     <label class="fld">URL do projeto</label><input id="cf_u" placeholder="https://xxxxx.supabase.co" value="${SUPABASE_URL||''}">
     <label class="fld" style="margin-top:11px">Chave publishable / anon</label><input id="cf_k" placeholder="sb_publishable_... ou eyJ..." value="${SUPABASE_KEY||''}">
@@ -427,8 +459,8 @@ const TODAY=new Date(); TODAY.setHours(0,0,0,0);
 function fmtDate(iso){ if(!iso)return '—'; const[y,m,d]=iso.split('-'); return `${d}/${m}`; }
 function daysUntil(iso){ if(!iso)return null; const t=new Date(iso+'T00:00:00'); return Math.round((t-TODAY)/864e5); }
 function dueChip(iso,label){ if(!iso)return '<span class="muted">—</span>'; const d=daysUntil(iso); let cl='due-ok',tag=''; if(d<0){cl='due-late';tag=` · ${label} atrasado`;} else if(d<=3){cl='due-soon';tag=` · em ${d}d`;} return `<span class="due ${cl}">${fmtDate(iso)}${tag}</span>`; }
-const BRAND_STATUS={"Prospect":"#8a7f6d","Contatado":"#3A6B8C","Respondeu":"#C29A3B","Ativa":"#5B6B4F","Sem retorno":"#9b8e7a","Pausada":"#A03A52"};
-const CAMP_STATUS={"A produzir":"#C29A3B","Conteúdo entregue":"#3A6B8C","Aguardando pagamento":"#D85A3A","Pago":"#5B6B4F"};
+const BRAND_STATUS={"Prospect":"#6E6558","Contatado":"#A8843F","Respondeu":"#BC8A36","Ativa":"#5B6B4F","Sem retorno":"#9C958A","Pausada":"#AE5638"};
+const CAMP_STATUS={"A produzir":"#BC8A36","Conteúdo entregue":"#6E6558","Aguardando pagamento":"#AE5638","Pago":"#5B6B4F"};
 function statusChip(s,map){ const c=map[s]||"#888"; return `<span class="bchip" style="color:${c};background:${c}1a;border:1px solid ${c}40">${esc(s||'—')}</span>`; }
 
 /* ============================ router ============================ */
