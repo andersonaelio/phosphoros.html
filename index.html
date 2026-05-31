@@ -1,7 +1,7 @@
 <!-- Assessoria — painel de gestão de influenciadores (protótipo SaaS) -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Assessoria · Painel</title>
+<title>Phosphoros · Gestão de talentos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -128,6 +128,16 @@
   .inf-handle{font-weight:700; color:var(--coral-deep); text-decoration:none; font-size:15.5px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .inf-handle:hover{text-decoration:underline}
   .inf-meta{font-size:12.5px; color:var(--ink-soft); margin-top:2px}
+  .tt-link{color:var(--coral-deep); text-decoration:none; font-weight:600}
+  .tt-link:hover{text-decoration:underline}
+  .welcome{margin-bottom:14px}
+  .wstep{display:flex; align-items:center; gap:11px; padding:11px 13px; border:1px solid var(--line); border-radius:11px; margin-bottom:8px; cursor:pointer; transition:.15s; font-weight:500}
+  .wstep:hover{border-color:var(--coral); background:#FCF7EF}
+  .wstep.wdone{cursor:default; color:var(--ink-soft); background:var(--sage-soft); border-color:var(--sage-soft)}
+  .wstep.wdone:hover{background:var(--sage-soft); border-color:var(--sage-soft)}
+  .wcheck{width:22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:12px; font-weight:700; flex-shrink:0; color:var(--sage)}
+  .wdone .wcheck{background:var(--sage); color:#fff; border-color:var(--sage)}
+  .wgo{margin-left:auto; color:var(--coral-deep); font-weight:700}
   .inf-rowbtns{display:flex; gap:6px; flex-shrink:0}
   .inf-stat{display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--line-2)}
   .inf-foll{font-family:"Fraunces",serif; font-size:26px; font-weight:600; line-height:1}
@@ -168,8 +178,8 @@
 <div id="appwrap" class="wrap" style="display:none">
   <header class="top">
     <div class="brand">
-      <h1>Assessoria<span class="dot">.</span></h1>
-      <small>Painel de talentos</small>
+      <h1>Phosphoros<span class="dot">.</span></h1>
+      <small>gestão de talentos</small>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span id="savePill" class="save-pill">salvo</span>
@@ -313,7 +323,7 @@ function showOnboard(){
   const a=document.getElementById('appwrap'); if(a)a.style.display='none';
   const g=document.getElementById('gate'); g.style.display='';
   g.innerHTML=`<div class="gate-card card">
-    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Assessoria<span class="dot">.</span></h1></div>
+    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Phosphoros<span class="dot">.</span></h1></div>
     <p class="muted" style="text-align:center;margin:0 0 18px;font-size:13.5px">Bem-vinda! Como você quer começar?</p>
     <label class="fld">Criar a sua agência</label>
     <input id="ob_name" placeholder="Nome da sua agência">
@@ -349,7 +359,7 @@ function showLogin(){
   const a=document.getElementById('appwrap'); if(a)a.style.display='none';
   const g=document.getElementById('gate'); g.style.display='';
   g.innerHTML=`<div class="gate-card card">
-    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Assessoria<span class="dot">.</span></h1></div>
+    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Phosphoros<span class="dot">.</span></h1></div>
     <p class="muted" style="text-align:center;margin:0 0 18px;font-size:13.5px">Entre para acessar o painel da agência</p>
     <label class="fld">E-mail</label><input id="au_e" type="email" placeholder="voce@email.com">
     <label class="fld" style="margin-top:11px">Senha</label><input id="au_p" type="password" placeholder="mínimo 6 caracteres">
@@ -378,7 +388,7 @@ function showSetup(){
   const a=document.getElementById('appwrap'); if(a)a.style.display='none';
   const g=document.getElementById('gate'); g.style.display='';
   g.innerHTML=`<div class="gate-card card">
-    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Assessoria<span class="dot">.</span></h1></div>
+    <div class="brand" style="justify-content:center;margin-bottom:4px"><h1>Phosphoros<span class="dot">.</span></h1></div>
     <p class="muted" style="text-align:center;margin:0 0 16px;font-size:13.5px">Conexão do app (só o dono faz isto)</p>
     <label class="fld">URL do projeto</label><input id="cf_u" placeholder="https://xxxxx.supabase.co" value="${SUPABASE_URL||''}">
     <label class="fld" style="margin-top:11px">Chave publishable / anon</label><input id="cf_k" placeholder="sb_publishable_... ou eyJ..." value="${SUPABASE_KEY||''}">
@@ -405,6 +415,7 @@ function fmtN(n){ if(n>=1000000)return (n/1000000).toFixed(n%1000000?1:0)+"M"; i
 function fmtMoney(n){ return "R$ "+Math.round(n).toLocaleString("pt-BR"); }
 function nicheTags(s){ return (s||"").split(/,|\be\b/i).map(x=>x.trim()).filter(Boolean); }
 function reelValue(f){ return f/1000*DB.rates.reel; }
+function postValue(i){ return (i.cache>0)?+i.cache:reelValue(+i.followers); }
 function storyValue(f){ return f/1000*DB.rates.story; }
 function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 const BRANDPAL=['#D85A3A','#5B6B4F','#7A4A63','#C29A3B','#3A6B8C','#9B5524','#4F7A6B','#A03A52'];
@@ -436,6 +447,27 @@ function render(){
 }
 
 /* ============================ PAINEL ============================ */
+function welcomeDone(){ try{ return localStorage.getItem('ph_welcome_done')==='1'; }catch(e){ return false; } }
+function dismissWelcome(){ try{ localStorage.setItem('ph_welcome_done','1'); }catch(e){} render(); }
+function viewWelcome(){
+  const steps=[
+    {done:DB.influencers.length>0, label:'Cadastrar o primeiro influenciador', fn:'openInflu()'},
+    {done:DB.brands.length>0,      label:'Cadastrar a primeira marca',        fn:'openBrand()'},
+    {done:DB.campaigns.length>0,   label:'Criar a primeira campanha',         fn:'openCamp()'},
+  ];
+  if(welcomeDone() || steps.every(s=>s.done)) return '';
+  return `<div class="card pad welcome">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div><h2 class="sec">Bem-vinda ao Phosphoros 👋</h2>
+      <p class="muted" style="margin:2px 0 14px;font-size:13px">Uns passos rápidos pra se situar — tudo opcional:</p></div>
+      <button class="link" style="font-size:12px;white-space:nowrap" onclick="dismissWelcome()">dispensar</button>
+    </div>
+    ${steps.map(s=>`<div class="wstep ${s.done?'wdone':''}" ${s.done?'':`onclick="${s.fn}"`}>
+      <span class="wcheck">${s.done?'✓':''}</span><span>${s.label}</span>${s.done?'':'<span class="wgo">→</span>'}
+    </div>`).join('')}
+    <p class="muted" style="font-size:12px;margin-top:10px">Dica: em <b>Dados</b>, abaixo, dá pra carregar um casting de exemplo pra testar.</p>
+  </div>`;
+}
 function viewPainel(){
   const inf=DB.influencers;
   const total=inf.length;
@@ -456,14 +488,15 @@ function viewPainel(){
   const maxN=Math.max(1,...niches.map(n=>n[1]));
 
   // valor estimado do roster (1 reel cada)
-  const rosterReel=inf.reduce((a,b)=>a+reelValue(+b.followers),0);
+  const rosterReel=inf.reduce((a,b)=>a+postValue(b),0);
 
   return `
+  ${viewWelcome()}
   <div class="stat-row">
     <div class="card stat"><div class="k">${total}</div><div class="l">Influenciadores</div></div>
     <div class="card stat"><div class="k">${fmtN(reach)}</div><div class="l">Alcance somado</div><div class="sub">média ${fmtN(Math.round(avg))}/perfil</div></div>
     <div class="card stat"><div class="k">${avgEng!=null?avgEng.toFixed(1)+'%':'—'}</div><div class="l">Engajamento médio</div><div class="sub">${eng.length}/${total} preenchidos</div></div>
-    <div class="card stat"><div class="k" style="font-size:23px">${fmtMoney(rosterReel)}</div><div class="l">Valor estimado · 1 reel cada</div></div>
+    <div class="card stat"><div class="k" style="font-size:23px">${fmtMoney(rosterReel)}</div><div class="l">Valor · 1 post por perfil</div></div>
   </div>
 
   <div class="two">
@@ -562,7 +595,7 @@ function viewInflu(){
           <div class="av av-lg">${init}</div>
           <div style="flex:1;min-width:0">
             <a class="inf-handle" href="https://instagram.com/${i.ig.replace('@','')}" target="_blank" rel="noopener">${esc(i.ig)}</a>
-            <div class="inf-meta">${esc(meta)}</div>
+            <div class="inf-meta">${esc(meta)}${i.tiktok?` · <a class="tt-link" href="https://www.tiktok.com/@${i.tiktok.replace('@','')}" target="_blank" rel="noopener">TikTok ↗</a>`:''}</div>
           </div>
           <div class="inf-rowbtns">
             <button class="iconbtn" title="Editar" onclick="openInflu('${i.id}')">✎</button>
@@ -577,7 +610,7 @@ function viewInflu(){
         <div class="inf-niches">${nicheTags(i.niche).map(n=>`<span class="niche-chip">${esc(n)}</span>`).join('')||'<span class="muted">—</span>'}</div>
         <div class="inf-foot">
           <button class="contact-btn" onclick="contactMenu('${i.id}',event)">✉ Contato</button>
-          <span class="muted" style="font-size:12px">reel ~ ${fmtMoney(reelValue(+i.followers))}</span>
+          <span class="muted" style="font-size:12px">${i.cache>0?'cachê '+fmtMoney(+i.cache):'reel ~ '+fmtMoney(reelValue(+i.followers))}</span>
         </div>
       </div>`;
     }).join(''):`<div class="card empty" style="grid-column:1/-1">Nenhum perfil encontrado.</div>`}
@@ -593,7 +626,7 @@ function wireInflu(){
 }
 async function delInflu(id){ if(!confirm('Remover este perfil?'))return; DB.influencers=DB.influencers.filter(i=>i.id!==id); render(); await sbDelete('influencers',id); }
 function openInflu(id){
-  const i = id?DB.influencers.find(x=>x.id===id):{ig:'',tiktok:'',followers:'',gen:'',loc:'',niche:'',engaj:'',status:'ativo',notas:'',brand:'',phone:'',email:''};
+  const i = id?DB.influencers.find(x=>x.id===id):{ig:'',tiktok:'',followers:'',gen:'',loc:'',niche:'',engaj:'',status:'ativo',notas:'',brand:'',phone:'',email:'',cache:''};
   modal(`
     <div class="modal-h"><h3>${id?'Editar perfil':'Novo perfil'}</h3><button class="iconbtn" onclick="closeModal()">✕</button></div>
     <div class="modal-b">
@@ -609,6 +642,7 @@ function openInflu(id){
         <div><label class="fld">Marca conectada</label><input id="m_br" list="brandlist" value="${esc(i.brand||'')}" placeholder="ex: RN"><datalist id="brandlist">${DB.brands.map(b=>`<option value="${esc(b.name)}">`).join('')}</datalist></div>
         <div><label class="fld">WhatsApp</label><input id="m_ph" value="${esc(i.phone||'')}" placeholder="ex: 5581999998888"></div>
         <div><label class="fld">E-mail</label><input id="m_em" value="${esc(i.email||'')}" placeholder="opcional"></div>
+        <div><label class="fld">Cachê por reel (R$)</label><input id="m_cache" type="number" value="${i.cache??''}" placeholder="valor real (opcional)"></div>
         <div style="grid-column:1/3"><label class="fld">Nicho</label><input id="m_n" value="${esc(i.niche)}" placeholder="Moda e lifestyle"></div>
         <div style="grid-column:1/3"><label class="fld">Notas</label><textarea id="m_nt" rows="2">${esc(i.notas)}</textarea></div>
       </div>
@@ -622,7 +656,7 @@ async function saveInflu(id){
   const g=k=>document.getElementById(k).value;
   const rec={ ig:g('m_ig')||'@', tiktok:g('m_tt'), followers:+g('m_f')||0, engaj:g('m_e')===''?null:+g('m_e'),
     gen:g('m_g'), loc:g('m_l'), niche:g('m_n'), notas:g('m_nt'), status:'ativo',
-    brand:g('m_br'), phone:g('m_ph'), email:g('m_em') };
+    brand:g('m_br'), phone:g('m_ph'), email:g('m_em'), cache:g('m_cache')===''?null:+g('m_cache') };
   if(id){ rec.id=id; Object.assign(DB.influencers.find(x=>x.id===id),rec); }
   else { rec.id=uid('i'); DB.influencers.push(rec); }
   closeModal(); render(); await sbUpsert('influencers',rec);
@@ -685,7 +719,7 @@ async function saveBrand(id){
 }
 
 /* ============================ CAMPANHAS (controle de prazos) ============================ */
-function campCost(c){ return DB.influencers.filter(i=>(c.influs||[]).includes(i.id)).reduce((a,b)=>a+reelValue(+b.followers),0); }
+function campCost(c){ return DB.influencers.filter(i=>(c.influs||[]).includes(i.id)).reduce((a,b)=>a+postValue(b),0); }
 function viewCamp(){
   const cs=DB.campaigns.slice();
   const aReceber=cs.filter(c=>c.status!=='Pago').reduce((a,b)=>a+(+b.valor||0),0);
@@ -794,7 +828,7 @@ function matchResults(){
 
   const sel=DB.influencers.filter(i=>mState.selected.has(i.id));
   const totReach=sel.reduce((a,b)=>a+(+b.followers),0);
-  const totCost=sel.reduce((a,b)=>a+reelValue(+b.followers),0);
+  const totCost=sel.reduce((a,b)=>a+postValue(b),0);
   const over=mState.budget&&totCost>+mState.budget;
 
   return `
@@ -812,7 +846,7 @@ function matchResults(){
         <div class="muted" style="font-size:12.5px">${fmtN(+i.followers)} seg · ${esc(i.niche)||'—'} · ${esc(i.loc)||'—'}</div>
       </div>
       <div style="text-align:right">
-        <div class="num">${fmtMoney(reelValue(+i.followers))}</div>
+        <div class="num">${fmtMoney(postValue(i))}</div>
         <button class="link" onclick="toggleSel('${i.id}')">${on?'remover':'+ casting'}</button>
       </div>
     </div>`;
@@ -843,6 +877,7 @@ function contactMenu(id,ev){
   if(i.phone) rows.push(`<a href="https://wa.me/${i.phone.replace(/\D/g,'')}" target="_blank" rel="noopener">🟢 WhatsApp</a>`);
   if(i.email) rows.push(`<a href="mailto:${esc(i.email)}">✉ E-mail</a>`);
   rows.push(`<a href="https://instagram.com/${encodeURIComponent(user)}" target="_blank" rel="noopener">↗ Abrir perfil</a>`);
+  if(i.tiktok) rows.push(`<a href="https://www.tiktok.com/@${encodeURIComponent(i.tiktok.replace('@',''))}" target="_blank" rel="noopener">🎵 TikTok</a>`);
   rows.push(`<button onclick="if(navigator.clipboard)navigator.clipboard.writeText('${i.ig}');this.textContent='@ copiado ✓'">⧉ Copiar @</button>`);
   if(!i.phone&&!i.email) rows.push(`<div class="pop-hint">Adicione WhatsApp/e-mail no perfil pra liberar mais canais</div>`);
   const pop=document.createElement('div'); pop.className='pop'; pop.id='pop'; pop.innerHTML=rows.join('');
@@ -860,7 +895,7 @@ window.addEventListener('scroll',closePop,true);
 /* ============================ export ============================ */
 function exportCsv(){
   const head=['instagram','tiktok','seguidores','porte','geracao','local','nicho','engajamento','reel_estimado'];
-  const lines=DB.influencers.map(i=>[i.ig,i.tiktok,i.followers,tierOf(+i.followers)[0],i.gen,i.loc,i.niche,i.engaj??'',Math.round(reelValue(+i.followers))]
+  const lines=DB.influencers.map(i=>[i.ig,i.tiktok,i.followers,tierOf(+i.followers)[0],i.gen,i.loc,i.niche,i.engaj??'',Math.round(postValue(i))]
     .map(c=>`"${(''+c).replace(/"/g,'""')}"`).join(','));
   const blob=new Blob(['\ufeff'+[head.join(','),...lines].join('\n')],{type:'text/csv'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='casting_assessoria.csv'; a.click();
