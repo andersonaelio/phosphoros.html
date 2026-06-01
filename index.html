@@ -1,952 +1,1108 @@
-<!-- Assessoria — painel de gestão de influenciadores (protótipo SaaS) -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Phosphoros · Gestão de talentos</title>
+<title>Phosphoros · Direção C (concept)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 110'%3E%3Cpath d='M22 48 Q60 18 98 48' stroke='%23C8A96B' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='46' r='9.5' stroke='%230D1117' stroke-width='6' fill='none'/%3E%3Cline x1='34' y1='72' x2='86' y2='72' stroke='%230D1117' stroke-width='6' stroke-linecap='round'/%3E%3Cline x1='42' y1='88' x2='78' y2='88' stroke='%23C8A96B' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 110'%3E%3Crect width='120' height='110' rx='26' fill='%231B7A57'/%3E%3Cpath d='M28 56 Q60 28 92 56' stroke='%23fff' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='54' r='9' stroke='%23fff' stroke-width='7' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#F3F1E9; --paper:#FBFAF5; --cream:#F3F1E9; --ink:#0D1117; --charcoal:#1A1F29; --ink-soft:#6E6558;
-    --line:#E4DDCE; --line-2:#EFE9DC;
-    --coral:#C8A96B; --coral-deep:#A8843F; --coral-soft:#F2E8D2;   /* acento = GOLD */
-    --primary:#0D1117; --primary-h:#1F2530; --primary-text:#F3F1E9;     /* botões = ink */
-    --sage:#5B6B4F; --sage-soft:#E7EBE0;
-    --gold:#BC8A36; --plum:#7A4A63; --clay:#AE5638;
-    --shadow:0 1px 2px rgba(13,17,23,.04), 0 10px 30px -18px rgba(13,17,23,.20);
+    /* base neutra fria + quente o suficiente pra não ficar clínica */
+    --bg:#F6F7F9; --surface:#FFFFFF; --surface-2:#FBFBFC;
+    --ink:#13161C; --ink-2:#3D434E; --muted:#727A87; --faint:#9AA1AD;
+    --line:#E8EAEF; --line-2:#F0F1F4;
+    /* DNA Phosphoros, mais saturado e intencional */
+    --accent:#1B7A57; --accent-deep:#135A40; --accent-soft:#DBEDE3; --accent-tint:#EFF7F2;
+    /* sidebar escura — herda o DNA dark */
+    --nav-bg:#0E1116; --nav-ink:#E7E4DD; --nav-muted:#7E8694; --nav-line:#1E232C; --nav-active:#1A1F28;
+    /* semânticos sóbrios */
+    --green:#2E7D5B; --green-soft:#E4F0EA; --amber:#B07514; --amber-soft:#F7EEDD; --danger:#C2543B; --danger-soft:#F8E7E1;
+    --radius:12px; --radius-sm:9px;
+    --shadow:0 1px 1px rgba(16,20,28,.03);
+    --shadow-pop:0 16px 40px -18px rgba(16,20,28,.30);
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   *{box-sizing:border-box}
-  html,body{margin:0}
+  html,body{margin:0;height:100%}
   body{
-    background:var(--bg);
-    color:var(--ink); font-family:"Inter",sans-serif;
-    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
-    min-height:100vh;
+    background:var(--bg); color:var(--ink);
+    font-family:"Hanken Grotesk",system-ui,sans-serif; font-size:14px; line-height:1.5;
+    -webkit-font-smoothing:antialiased; letter-spacing:-.005em;
   }
-  /* ---- tema escuro (alterna por classe no body) ---- */
-  body.dark{
-    --bg:#10141B; --paper:#1A212B; --ink:#ECE8DD; --ink-soft:#9A9387;
-    --line:#2A313D; --line-2:#232A34;
-    --primary:#C8A96B; --primary-h:#A8843F; --primary-text:#0D1117;
-    --sage-soft:#26312A; --coral-soft:#2E2A1E;
-    --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 40px -20px rgba(0,0,0,.6);
-  }
-  body.dark header.top{border:1px solid #232A36}
-  body.dark .bchip, body.dark .tier, body.dark .save-pill{filter:brightness(1.5)}
-  body.dark button.ghost:hover{background:#222A35}
-  .wrap{max-width:1180px; margin:0 auto; padding:22px 22px 80px}
-  /* ---------- top bar (escuro) ---------- */
-  header.top{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; background:#0D1117; color:var(--cream); border-radius:14px; padding:12px 20px; margin-bottom:16px}
-  .brand{display:flex; align-items:center; gap:11px}
-  .brand h1{font-family:"Cormorant Garamond",serif; font-weight:600; font-size:26px; letter-spacing:.14em; text-transform:uppercase; margin:0; color:var(--cream); padding-left:.14em}
-  .brand .dot{color:var(--coral)}
-  .brand small{color:#9C958A; font-size:11px; letter-spacing:.16em; text-transform:uppercase}
-  header.top .muted{color:#9C958A}
-  header.top .iconbtn{background:transparent; border-color:#333B49; color:#D7D1C4}
-  header.top .iconbtn:hover{border-color:var(--coral); color:var(--coral)}
-  .save-pill{font-size:11.5px; color:var(--sage); background:var(--sage-soft); padding:5px 11px; border-radius:999px; font-weight:600; letter-spacing:.02em}
-  .save-pill.warn{color:#8a5a00; background:#f6ecd2}
-  /* ---------- nav ---------- */
-  nav.tabs{display:flex; gap:4px; margin:18px 0 22px; border-bottom:1.5px solid var(--line); flex-wrap:wrap}
-  nav.tabs button{
-    appearance:none; border:0; background:none; font:inherit; cursor:pointer;
-    padding:11px 16px; color:var(--ink-soft); font-weight:600; border-radius:10px 10px 0 0;
-    position:relative; transition:color .15s; font-size:14.5px;
-  }
-  nav.tabs button:hover{color:var(--ink)}
-  nav.tabs button.active{color:var(--coral-deep)}
-  nav.tabs button.active::after{content:""; position:absolute; left:14px; right:14px; bottom:-1.5px; height:2.5px; background:var(--coral); border-radius:3px}
-  /* ---------- generic ---------- */
-  .card{background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow)}
-  .muted{color:var(--ink-soft)}
-  h2.sec{font-family:"Cormorant Garamond",serif; font-weight:600; font-size:24px; margin:0 0 2px}
-  button.btn{appearance:none; cursor:pointer; font:inherit; font-weight:600; border-radius:10px; padding:9px 15px; border:1px solid var(--primary); background:var(--primary); color:var(--primary-text); transition:.15s; font-size:13.5px}
-  button.btn:hover{background:var(--primary-h); border-color:var(--primary-h)}
-  button.ghost{background:none; color:var(--ink); border:1px solid var(--line)}
-  button.ghost:hover{background:#fff; border-color:var(--ink-soft)}
-  input,select,textarea{font:inherit; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:9px; padding:8px 10px; width:100%}
-  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--coral); box-shadow:0 0 0 3px var(--coral-soft)}
-  label.fld{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin:0 0 4px; letter-spacing:.02em}
-  .grid-form{display:grid; grid-template-columns:1fr 1fr; gap:13px}
-  /* ---------- dashboard ---------- */
-  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
-  .stat{padding:16px 18px}
-  .stat .k{font-family:"Cormorant Garamond",serif; font-size:34px; font-weight:600; line-height:1}
-  .stat .l{font-size:12px; color:var(--ink-soft); margin-top:6px; letter-spacing:.04em; text-transform:uppercase}
-  .stat .sub{font-size:12px; color:var(--coral-deep); margin-top:3px; font-weight:600}
-  .two{display:grid; grid-template-columns:1.3fr 1fr; gap:14px; margin-top:14px}
-  .bar-item{display:flex; align-items:center; gap:10px; margin:9px 0}
-  .bar-item .name{width:120px; font-size:13px; font-weight:600; flex-shrink:0; text-transform:capitalize}
-  .bar-track{flex:1; height:9px; background:var(--line-2); border-radius:99px; overflow:hidden}
-  .bar-fill{height:100%; border-radius:99px}
-  .bar-item .val{width:54px; text-align:right; font-size:12.5px; color:var(--ink-soft); font-variant-numeric:tabular-nums}
+  .num{font-family:var(--mono); font-feature-settings:"tnum" 1; letter-spacing:-.02em}
+  button{font-family:inherit}
+  ::selection{background:var(--accent-soft)}
+
+  /* ===================== shell ===================== */
+  .app{display:grid; grid-template-columns:236px 1fr; min-height:100vh}
+
+  /* ---- sidebar ---- */
+  .nav{background:var(--nav-bg); color:var(--nav-ink); display:flex; flex-direction:column; padding:18px 14px; position:sticky; top:0; height:100vh}
+  .brand{display:flex; align-items:center; gap:11px; padding:6px 8px 4px}
+  .brand .mark{width:30px; height:30px; border-radius:9px; background:var(--accent); display:grid; place-items:center; flex-shrink:0; box-shadow:0 2px 10px -3px rgba(16,20,28,.5)}
+  .brand .mark svg{display:block}
+  .brand .name{font-weight:700; font-size:15px; letter-spacing:.02em}
+  .brand .name b{color:var(--accent)}
+  .brand .sub{font-size:10.5px; color:var(--nav-muted); letter-spacing:.06em; text-transform:uppercase; margin-top:1px}
+  .navsec{font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--nav-muted); padding:0 10px; margin:22px 0 7px}
+  .navlist{display:flex; flex-direction:column; gap:2px}
+  .navitem{display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:9px; color:var(--nav-muted); cursor:pointer; font-weight:500; font-size:13.5px; border:0; background:none; text-align:left; width:100%; transition:background .14s,color .14s}
+  .navitem svg{width:17px; height:17px; flex-shrink:0; stroke-width:1.9}
+  .navitem:hover{color:var(--nav-ink); background:#161B23}
+  .navitem.active{color:var(--nav-ink); background:var(--nav-active)}
+  .navitem.active svg{color:var(--accent)}
+  .navitem .badge{margin-left:auto; font-family:var(--mono); font-size:11px; background:#1C222B; color:var(--nav-muted); padding:1px 7px; border-radius:99px}
+  .navitem.active .badge{background:var(--accent); color:#fff}
+  .nav-foot{margin-top:auto; padding-top:14px; border-top:1px solid var(--nav-line)}
+  .nav-user{display:flex; align-items:center; gap:10px; padding:8px 8px}
+  .nav-user .ava{width:30px; height:30px; border-radius:8px; background:#222833; color:var(--nav-ink); display:grid; place-items:center; font-weight:700; font-size:12.5px; flex-shrink:0}
+  .nav-user .who{min-width:0}
+  .nav-user .who .n{font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .nav-user .who .e{font-size:11px; color:var(--nav-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+  /* ---- main ---- */
+  .main{min-width:0; display:flex; flex-direction:column}
+  .topbar{height:60px; display:flex; align-items:center; gap:16px; padding:0 28px; border-bottom:1px solid var(--line); background:color-mix(in srgb,var(--surface) 78%, transparent); backdrop-filter:blur(8px); position:sticky; top:0; z-index:20}
+  .topbar h1{font-size:17px; font-weight:700; margin:0; letter-spacing:-.01em}
+  .topbar .crumb{color:var(--faint); font-weight:500; font-size:13px}
+  .search{margin-left:auto; position:relative; width:248px}
+  .search input{width:100%; border:1px solid var(--line); background:var(--surface-2); border-radius:9px; padding:8px 12px 8px 33px; font:inherit; font-size:13px; color:var(--ink)}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:none; border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px var(--accent-tint)}
+  .search svg{position:absolute; left:10px; top:9px; width:15px; height:15px; color:var(--faint); stroke-width:2}
+  .icobtn{width:34px; height:34px; border:1px solid var(--line); background:var(--surface); border-radius:9px; display:grid; place-items:center; cursor:pointer; color:var(--ink-2); position:relative}
+  .icobtn:hover{border-color:var(--ink-2)}
+  .icobtn svg{width:17px;height:17px;stroke-width:1.9}
+  .icobtn .dot{position:absolute; top:7px; right:8px; width:6px; height:6px; border-radius:99px; background:var(--accent); border:1.5px solid var(--surface)}
+  .btn{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--accent); background:var(--accent); color:#fff; font-weight:600; font-size:13px; padding:8px 14px; border-radius:9px; cursor:pointer; transition:background .14s}
+  .btn svg{width:15px;height:15px;stroke-width:2.2}
+  .btn:hover{background:var(--accent-deep); border-color:var(--accent-deep)}
+  .btn.ghost{background:var(--surface); color:var(--ink); border-color:var(--line)}
+  .btn.ghost:hover{border-color:var(--ink-2); background:var(--surface)}
+
+  .content{padding:26px 28px 60px; max-width:1280px; width:100%}
+  .view{display:none}
+  .view.on{display:block; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)}to{opacity:1; transform:none}}
+
+  /* ===================== cards ===================== */
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
   .pad{padding:18px 20px}
-  /* ---------- tier badges ---------- */
-  .tier{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px; letter-spacing:.03em; white-space:nowrap}
+  .ctitle{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px}
+  .ctitle h3{margin:0; font-size:14px; font-weight:700; letter-spacing:-.01em}
+  .ctitle .link{font-size:12.5px; font-weight:600; color:var(--accent-deep); cursor:pointer}
+  .ctitle .link:hover{text-decoration:underline}
+
+  /* ---- KPI row ---- */
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
+  .kpi{padding:16px 17px; position:relative; overflow:hidden}
+  .kpi .lab{font-size:12px; color:var(--muted); font-weight:600; display:flex; align-items:center; gap:7px}
+  .kpi .lab svg{width:14px; height:14px; color:var(--faint); stroke-width:2}
+  .kpi .val{font-size:29px; font-weight:600; margin-top:11px; line-height:1; letter-spacing:-.03em}
+  .kpi .val .unit{font-size:15px; color:var(--muted); font-weight:500; margin-left:2px}
+  .kpi .meta{display:flex; align-items:center; gap:8px; margin-top:10px}
+  .delta{display:inline-flex; align-items:center; gap:3px; font-family:var(--mono); font-size:11.5px; font-weight:600; padding:2px 7px; border-radius:7px}
+  .delta svg{width:11px; height:11px; stroke-width:2.6}
+  .delta.up{color:var(--green); background:var(--green-soft)}
+  .delta.flat{color:var(--muted); background:var(--line-2)}
+  .delta.warn{color:var(--amber); background:var(--amber-soft)}
+  .kpi .note{font-size:11.5px; color:var(--faint)}
+  .spark{position:absolute; right:14px; bottom:14px; width:78px; height:30px; opacity:.9}
+
+  /* ---- dashboard grid ---- */
+  .dash{display:grid; grid-template-columns:1.55fr 1fr; gap:14px; margin-top:14px}
+  .bars{display:flex; flex-direction:column; gap:13px}
+  .bar{display:grid; grid-template-columns:84px 1fr 38px; align-items:center; gap:12px}
+  .bar .bn{font-size:12.5px; font-weight:600; text-transform:capitalize}
+  .bar .bn small{display:block; color:var(--faint); font-weight:500; font-size:10.5px; text-transform:none; letter-spacing:.02em}
+  .track{height:8px; background:var(--line-2); border-radius:99px; overflow:hidden}
+  .fill{height:100%; border-radius:99px; background:var(--accent)}
+  .bar .bv{font-family:var(--mono); font-size:12.5px; color:var(--ink-2); text-align:right; font-weight:600}
+
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px}
+  /* niche cloud */
+  .niches{display:flex; flex-wrap:wrap; gap:7px}
+  .ntag{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; padding:5px 11px; border-radius:8px; background:var(--surface-2); border:1px solid var(--line); text-transform:capitalize}
+  .ntag .c{font-family:var(--mono); color:var(--muted); font-weight:600; font-size:11.5px}
+
+  /* agenda timeline */
+  .tl{position:relative; padding-left:22px}
+  .tl::before{content:""; position:absolute; left:5px; top:6px; bottom:6px; width:1.5px; background:var(--line)}
+  .tl-row{position:relative; padding:9px 0; border-bottom:1px solid var(--line-2)}
+  .tl-row:last-child{border-bottom:0}
+  .tl-row::before{content:""; position:absolute; left:-21px; top:14px; width:9px; height:9px; border-radius:99px; background:var(--surface); border:2px solid var(--faint)}
+  .tl-row.soon::before{border-color:var(--amber); background:var(--amber)}
+  .tl-row.late::before{border-color:var(--danger); background:var(--danger)}
+  .tl-top{display:flex; align-items:center; gap:8px}
+  .tl-kind{font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:6px}
+  .tl-kind.e{color:#2C6E8F; background:#E2EEF4}
+  .tl-kind.p{color:var(--accent-deep); background:var(--accent-soft)}
+  .tl-when{margin-left:auto; font-family:var(--mono); font-size:12px; font-weight:600; color:var(--ink-2)}
+  .tl-when.soon{color:var(--amber)} .tl-when.late{color:var(--danger)}
+  .tl-desc{font-size:13px; color:var(--ink-2); margin-top:4px}
+  .tl-desc b{color:var(--ink); font-weight:600}
+
+  /* ===================== influencers ===================== */
+  .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap}
+  .toolbar .search{margin-left:0; width:280px}
+  .seg{display:inline-flex; background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:3px; gap:2px}
+  .seg button{border:0; background:none; font:inherit; font-size:12.5px; font-weight:600; color:var(--muted); padding:6px 12px; border-radius:7px; cursor:pointer}
+  .seg button.on{background:var(--ink); color:#fff}
+  .spacer{flex:1}
+  .count{font-size:12.5px; color:var(--faint); font-weight:500}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px}
+  .inf{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 17px; display:flex; flex-direction:column; gap:13px; transition:border-color .15s, box-shadow .15s, transform .15s; position:relative}
+  .inf:hover{border-color:#D7DAE1; box-shadow:0 10px 26px -18px rgba(16,20,28,.4); transform:translateY(-1px)}
+  .inf-top{display:flex; align-items:center; gap:11px}
+  .mono-ava{width:40px; height:40px; border-radius:10px; display:grid; place-items:center; font-weight:700; font-size:15px; flex-shrink:0}
+  .av-nano{background:#EEF0F3;color:#5A616B}
+  .av-micro{background:var(--green-soft);color:var(--green)}
+  .av-macro{background:var(--accent-soft);color:var(--accent-deep)}
+  .av-mega{background:#F3E7EE;color:#7A4A63}
+  .inf-id{min-width:0; flex:1}
+  .inf-h{font-weight:700; font-size:14.5px; display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .inf-h a{color:var(--ink); text-decoration:none}
+  .inf-h a:hover{color:var(--accent-deep)}
+  .inf-sub{font-size:12px; color:var(--muted); margin-top:1px}
+  .inf-acts{display:flex; gap:5px; opacity:0; transition:opacity .14s}
+  .inf:hover .inf-acts{opacity:1}
+  .miniico{width:28px; height:28px; border:1px solid var(--line); background:var(--surface); border-radius:8px; display:grid; place-items:center; cursor:pointer; color:var(--muted)}
+  .miniico svg{width:14px; height:14px; stroke-width:1.9}
+  .miniico:hover{color:var(--accent-deep); border-color:var(--accent-soft); background:var(--accent-tint)}
+  .inf-mid{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding-bottom:13px; border-bottom:1px solid var(--line-2)}
+  .inf-foll{font-size:25px; font-weight:600; line-height:1; letter-spacing:-.03em}
+  .inf-foll .u{font-size:11.5px; color:var(--muted); font-weight:500; font-family:"Hanken Grotesk",sans-serif; letter-spacing:0; margin-left:5px}
+  .tier{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:99px; letter-spacing:.04em; text-transform:uppercase}
   .tier::before{content:""; width:6px; height:6px; border-radius:99px; background:currentColor}
-  .t-nano{color:#6b6256; background:#EEE8DC}
-  .t-micro{color:var(--sage); background:var(--sage-soft)}
-  .t-macro{color:var(--coral-deep); background:var(--coral-soft)}
-  .t-mega{color:var(--plum); background:#F1E3EB}
-  /* ---------- table ---------- */
-  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
-  .toolbar .search{flex:1; min-width:180px; position:relative}
-  .toolbar .search input{padding-left:32px}
-  .toolbar .search svg{position:absolute; left:10px; top:9px; opacity:.45}
-  .toolbar select{width:auto; min-width:130px}
-  table{width:100%; border-collapse:collapse; font-size:13.5px}
-  thead th{text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; padding:10px 12px; border-bottom:1.5px solid var(--line); cursor:pointer; user-select:none; white-space:nowrap}
-  thead th .arr{opacity:.4; font-size:10px}
-  tbody td{padding:11px 12px; border-bottom:1px solid var(--line-2); vertical-align:middle}
-  tbody tr:hover{background:#FCF7EF}
-  .handle{font-weight:700}
-  .handle a{color:var(--coral-deep); text-decoration:none}
-  .handle a:hover{text-decoration:underline}
-  .num{font-variant-numeric:tabular-nums; font-weight:600}
-  .niche-chip{display:inline-block; font-size:11.5px; background:var(--line-2); color:var(--ink-soft); padding:2px 8px; border-radius:7px; margin:1px 2px 1px 0}
-  .rowbtns{display:flex; gap:6px; opacity:0; transition:.15s}
-  tr:hover .rowbtns{opacity:1}
-  .iconbtn{appearance:none; border:1px solid var(--line); background:#fff; border-radius:8px; width:28px; height:28px; cursor:pointer; display:grid; place-items:center; padding:0}
-  .iconbtn:hover{border-color:var(--coral); color:var(--coral-deep)}
-  .empty{padding:40px; text-align:center; color:var(--ink-soft)}
-  .bchip{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:99px; white-space:nowrap}
-  .bchip::before{content:""; width:6px; height:6px; border-radius:99px; background:currentColor}
-  .contact-btn{appearance:none; cursor:pointer; font:inherit; font-size:12.5px; font-weight:600; border:1px solid var(--sage); color:var(--sage); background:var(--sage-soft); border-radius:8px; padding:6px 11px; white-space:nowrap; display:inline-flex; align-items:center; gap:5px}
-  .contact-btn:hover{background:var(--sage); color:#fff}
-  .pop{position:fixed; z-index:60; background:var(--paper); border:1px solid var(--line); border-radius:13px; box-shadow:0 22px 55px -18px rgba(33,28,23,.45); padding:6px; min-width:182px; animation:popin .12s ease}
-  @keyframes popin{from{opacity:0; transform:translateY(-4px)}to{opacity:1; transform:none}}
-  .pop a,.pop button{display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:9px 11px; border-radius:9px; font:inherit; font-size:13.5px; color:var(--ink); text-decoration:none; background:none; border:0; cursor:pointer}
-  .pop a:hover,.pop button:hover{background:var(--coral-soft); color:var(--coral-deep)}
-  .pop .hd{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); padding:7px 11px 5px; font-weight:700; pointer-events:none}
-  .pop .pop-hint{font-size:11px; color:var(--ink-soft); padding:7px 11px; line-height:1.35}
-  .due{font-size:12.5px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
-  .due-ok{color:var(--ink)}
-  .due-soon{color:var(--gold)}
-  .due-late{color:var(--clay); font-weight:700}
-  .agenda-row{display:flex; align-items:center; gap:11px; padding:9px 0; border-bottom:1px solid var(--line-2); font-size:13.5px}
-  .agenda-row:last-child{border-bottom:0}
-  .agenda-tag{font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:3px 8px; border-radius:7px; flex-shrink:0}
-  .tg-e{color:#3A6B8C; background:#e1ebf2}
-  .tg-p{color:var(--coral-deep); background:var(--coral-soft)}
-  .chk-grid{display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; max-height:170px; overflow:auto; border:1px solid var(--line); border-radius:10px; padding:10px 12px}
-  .chk{display:flex; align-items:center; gap:7px; font-size:13px; font-weight:500}
-  .chk input{width:auto}
-  .inf-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px}
-  .inf-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:20px; display:flex; flex-direction:column; gap:14px; transition:transform .18s, box-shadow .18s, border-color .18s}
-  .inf-card:hover{border-color:var(--coral); transform:translateY(-2px); box-shadow:0 12px 32px -16px rgba(33,28,23,.32)}
-  .av-lg{width:46px; height:46px; font-size:19px}
-  .inf-top{display:flex; align-items:center; gap:12px}
-  .inf-handle{font-weight:700; color:var(--coral-deep); text-decoration:none; font-size:15.5px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .inf-handle:hover{text-decoration:underline}
-  .inf-meta{font-size:12.5px; color:var(--ink-soft); margin-top:2px}
-  .tt-link{color:var(--coral-deep); text-decoration:none; font-weight:600}
-  .tt-link:hover{text-decoration:underline}
-  .welcome{margin-bottom:14px}
-  .wstep{display:flex; align-items:center; gap:11px; padding:11px 13px; border:1px solid var(--line); border-radius:11px; margin-bottom:8px; cursor:pointer; transition:.15s; font-weight:500}
-  .wstep:hover{border-color:var(--coral); background:#FCF7EF}
-  .wstep.wdone{cursor:default; color:var(--ink-soft); background:var(--sage-soft); border-color:var(--sage-soft)}
-  .wstep.wdone:hover{background:var(--sage-soft); border-color:var(--sage-soft)}
-  .wcheck{width:22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:12px; font-weight:700; flex-shrink:0; color:var(--sage)}
-  .wdone .wcheck{background:var(--sage); color:#fff; border-color:var(--sage)}
-  .wgo{margin-left:auto; color:var(--coral-deep); font-weight:700}
-  .obs-row td{padding-top:0; padding-bottom:12px; font-size:13px; color:var(--ink-soft); border-bottom:1px solid var(--line-2); line-height:1.45}
-  .obs-tag{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--gold); background:#f6ecd2; padding:2px 7px; border-radius:6px; margin-right:6px; vertical-align:middle}
-  .inf-rowbtns{display:flex; gap:6px; flex-shrink:0}
-  .inf-stat{display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--line-2)}
-  .inf-foll{font-family:"Cormorant Garamond",serif; font-size:30px; font-weight:600; line-height:1}
-  .inf-niches{display:flex; flex-wrap:wrap; gap:4px; min-height:22px}
+  .t-nano{color:#7A8089; background:#EEF0F3}
+  .t-micro{color:var(--green); background:var(--green-soft)}
+  .t-macro{color:var(--accent-deep); background:var(--accent-soft)}
+  .t-mega{color:#7A4A63; background:#F3E7EE}
+  .inf-niches{display:flex; flex-wrap:wrap; gap:5px; min-height:24px}
+  .chip{font-size:11.5px; font-weight:500; color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line); padding:2px 8px; border-radius:7px; text-transform:capitalize}
   .inf-foot{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto}
-  /* ---------- modal ---------- */
-  .scrim{position:fixed; inset:0; background:rgba(33,28,23,.42); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:50; padding:18px}
-  .scrim.on{display:flex}
-  .modal{background:var(--paper); border-radius:18px; max-width:560px; width:100%; max-height:90vh; overflow:auto; box-shadow:0 30px 70px -20px rgba(33,28,23,.5)}
-  .modal-h{padding:18px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:var(--paper)}
-  .modal-h h3{font-family:"Cormorant Garamond",serif; margin:0; font-size:19px; font-weight:600}
-  .modal-b{padding:20px 22px}
-  .modal-f{padding:14px 22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:10px; position:sticky; bottom:0; background:var(--paper)}
-  /* ---------- matcher ---------- */
-  .match-grid{display:grid; grid-template-columns:300px 1fr; gap:16px}
-  .roster-card{display:flex; align-items:center; gap:12px; padding:11px 14px; border:1px solid var(--line); border-radius:12px; margin-bottom:9px}
-  .roster-card:hover{border-color:var(--coral)}
-  .av{width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--ink),var(--coral)); display:grid; place-items:center; color:#fff; font-weight:700; font-size:14px; flex-shrink:0; font-family:"Cormorant Garamond",serif}
-  .pill-stat{display:flex; gap:20px; padding:14px 18px; background:var(--coral-soft); border-radius:12px; margin-bottom:14px; flex-wrap:wrap}
-  .pill-stat .k{font-family:"Cormorant Garamond",serif; font-size:22px; font-weight:600}
-  .pill-stat .l{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--coral-deep)}
-  .link{color:var(--coral-deep); cursor:pointer; font-weight:600; background:none; border:0; font:inherit; padding:0}
-  .link:hover{text-decoration:underline}
-  @media(max-width:760px){
-    .stat-row{grid-template-columns:1fr 1fr}
-    .two,.match-grid{grid-template-columns:1fr}
-    .grid-form{grid-template-columns:1fr}
-    .hide-sm{display:none}
+  .inf-val{font-size:12.5px; color:var(--muted)}
+  .inf-val b{font-family:var(--mono); color:var(--ink); font-weight:600; font-size:13px}
+  .contact{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface); color:var(--ink-2); font-weight:600; font-size:12.5px; padding:6px 11px; border-radius:8px; cursor:pointer}
+  .contact svg{width:14px; height:14px; stroke-width:2}
+  .contact:hover{border-color:var(--accent); color:var(--accent-deep); background:var(--accent-tint)}
+  .linkflag{position:absolute; top:14px; right:14px; font-size:10.5px; font-weight:600; color:var(--green); background:var(--green-soft); padding:2px 8px; border-radius:7px}
+
+  .note-strip{display:flex; gap:9px; align-items:flex-start; margin-top:22px; padding:13px 15px; background:var(--accent-tint); border:1px solid var(--accent-soft); border-radius:10px; font-size:12.5px; color:var(--ink-2)}
+  .note-strip svg{width:16px;height:16px;color:var(--accent-deep);stroke-width:2;flex-shrink:0;margin-top:1px}
+  .note-strip b{color:var(--ink)}
+
+  /* ---- tabelas (marcas / campanhas) ---- */
+  .tbl-wrap{overflow:hidden}
+  .tbl-scroll{overflow-x:auto}
+  table{width:100%; border-collapse:collapse; font-size:13px}
+  thead th{text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:700; padding:12px 16px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--surface-2)}
+  tbody td{padding:13px 16px; border-bottom:1px solid var(--line-2); vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:var(--surface-2)}
+  .cell-strong{font-weight:600; font-size:13.5px}
+  .cell-sub{font-size:11.5px; color:var(--muted); margin-top:3px}
+  .chip-row{display:flex; flex-wrap:wrap; gap:4px}
+  .st{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:99px; white-space:nowrap}
+  .st::before{content:""; width:6px; height:6px; border-radius:99px; background:currentColor}
+  .row-acts{display:flex; gap:5px; opacity:0; transition:opacity .14s}
+  tr:hover .row-acts{opacity:1}
+  .due{font-family:var(--mono); font-size:12px; font-weight:600; white-space:nowrap}
+  .due.soon{color:var(--amber)} .due.late{color:var(--danger)} .due.ok{color:var(--ink-2)} .due.done{color:var(--faint)}
+
+  /* ---- funil ---- */
+  .funnel{display:flex; gap:11px; margin-bottom:16px; flex-wrap:wrap}
+  .fstage{flex:1; min-width:130px; background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:14px 16px}
+  .fstage .fc{font-family:var(--mono); font-size:23px; font-weight:600; letter-spacing:-.02em}
+  .fstage .fl{font-size:11.5px; color:var(--muted); font-weight:600; margin-top:5px; display:flex; align-items:center; gap:7px}
+  .fstage .fl::before{content:""; width:7px; height:7px; border-radius:99px; background:var(--dotc,var(--faint))}
+
+  /* ---- match ---- */
+  .match{display:grid; grid-template-columns:286px 1fr; gap:16px; align-items:start}
+  .ffield{margin-bottom:15px}
+  .ffield label{display:block; font-size:11.5px; font-weight:600; color:var(--muted); margin-bottom:6px}
+  .ffield input,.ffield select{width:100%; border:1px solid var(--line); background:var(--surface-2); border-radius:9px; padding:9px 11px; font:inherit; font-size:13px; color:var(--ink)}
+  .ffield input:focus,.ffield select:focus{outline:none; border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px var(--accent-tint)}
+  .summary{display:flex; gap:26px; flex-wrap:wrap; padding:16px 19px; background:var(--accent-tint); border:1px solid var(--accent-soft); border-radius:12px; margin-bottom:14px}
+  .summary .sv{font-size:22px; font-weight:600; font-family:var(--mono); letter-spacing:-.02em}
+  .summary .sl{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--accent-deep); font-weight:600; margin-top:3px}
+  .roster{display:flex; flex-direction:column; gap:9px}
+  .rcard{display:flex; align-items:center; gap:13px; padding:11px 14px; border:1px solid var(--line); border-radius:11px; background:var(--surface); transition:border-color .14s, background .14s}
+  .rcard.sel{border-color:var(--accent); background:var(--accent-tint)}
+  .rcard .rid{flex:1; min-width:0}
+  .rcard .rh{font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:8px}
+  .rcard .rm{font-size:12px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .rcard .rv{text-align:right; flex-shrink:0}
+  .rcard .rv .rval{font-family:var(--mono); font-size:13px; font-weight:600}
+  .addbtn{display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); background:var(--surface); color:var(--ink-2); font-weight:600; font-size:11.5px; padding:5px 10px; border-radius:8px; cursor:pointer; margin-top:6px}
+  .addbtn:hover{border-color:var(--accent); color:var(--accent-deep); background:#fff}
+  .rcard.sel .addbtn{border-color:var(--accent); color:var(--accent-deep)}
+  @media(max-width:880px){ .match{grid-template-columns:1fr} }
+
+  /* ===================== dark mode (1ª classe) ===================== */
+  body.dark{
+    --bg:#0B0E13; --surface:#12161D; --surface-2:#171C24;
+    --ink:#E9ECF1; --ink-2:#B4BAC5; --muted:#8A92A0; --faint:#646B78;
+    --line:#242B35; --line-2:#1B212A;
+    --accent-soft:#16332A; --accent-tint:#101E18;
+    --green-soft:#15301F; --amber-soft:#312611; --danger-soft:#341A1A;
+    --shadow:0 1px 1px rgba(0,0,0,.3);
+    --shadow-pop:0 16px 40px -18px rgba(0,0,0,.7);
   }
-  .gate{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:22px;
-    background:radial-gradient(120% 80% at 50% -10%, #161C26 0%, var(--ink) 60%)}
-  .gate-card{width:100%; max-width:382px; padding:34px 30px; background:#141A24; border:1px solid #262E3B; color:var(--cream); box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
-  .gate-card .fld{color:#9C958A}
-  .gate-card input{background:#0F151E; border-color:#2A3340; color:var(--cream)}
-  .gate-card input::placeholder{color:#5E6470}
-  .gate-card .muted{color:#9C958A}
-  .gate-card .btn{background:var(--coral); border-color:var(--coral); color:var(--ink)}
-  .gate-card .btn:hover{background:var(--coral-deep); border-color:var(--coral-deep)}
-  .gate-card .btn.ghost{background:transparent; color:var(--cream); border-color:#2A3340}
-  .gate-card .btn.ghost:hover{background:#1B2330; border-color:#3A4150}
-  .gate-card .link{color:var(--coral)}
-  .au-msg{font-size:12.5px; color:var(--coral); margin-top:10px; min-height:16px; line-height:1.4}
+  body.dark .topbar{background:color-mix(in srgb,var(--surface) 82%, transparent)}
+  body.dark .chip{background:var(--surface-2)}
+  body.dark .t-nano,body.dark .av-nano{background:#222933;color:#AEB6C2}
+  body.dark .t-micro,body.dark .av-micro{background:#15301F;color:#5FC58C}
+  body.dark .t-macro,body.dark .av-macro{background:#16332A;color:#4FBE8C}
+  body.dark .t-mega,body.dark .av-mega{background:#2C2230;color:#D9A9C6}
+  body.dark .tl-kind.e{background:#16323F;color:#7FC4E0}
+  body.dark thead th{background:var(--surface-2)}
+  body.dark .sw{box-shadow:0 0 0 1px var(--line) inset}
+
+  /* ===================== gate (login / onboarding) ===================== */
+  .gate{position:fixed; inset:0; z-index:90; display:flex; align-items:center; justify-content:center; padding:24px;
+    background:radial-gradient(135% 95% at 50% -12%, #16202B 0%, #090C11 62%)}
+  .gate-card{width:100%; max-width:392px; background:#10151D; border:1px solid #1E2530; border-radius:18px; padding:34px 30px; box-shadow:0 44px 100px -34px rgba(0,0,0,.75); color:#E7E4DD}
+  .gate-logo{display:flex; flex-direction:column; align-items:center; gap:11px; margin-bottom:6px}
+  .gate-mark{width:54px; height:54px; border-radius:15px; background:var(--accent); display:grid; place-items:center; box-shadow:0 10px 28px -6px rgba(27,122,87,.6)}
+  .gate-word{font-weight:700; font-size:21px; letter-spacing:.03em}
+  .gate-tag{font-size:11.5px; color:#3FA877; letter-spacing:.03em}
+  .gate-sub{text-align:center; color:#8A92A0; font-size:13px; margin:15px 0 18px; line-height:1.5}
+  .gate-tabs{display:flex; gap:4px; background:#0A0E13; border:1px solid #1E2530; border-radius:11px; padding:4px; margin-bottom:18px}
+  .gate-tabs button{flex:1; border:0; background:none; color:#8A92A0; font:inherit; font-weight:600; font-size:13px; padding:8px; border-radius:8px; cursor:pointer; transition:.14s}
+  .gate-tabs button.on{background:#1A212B; color:#E7E4DD}
+  .gfield{margin-bottom:13px}
+  .gfield label{display:block; font-size:12px; font-weight:600; color:#9098A4; margin-bottom:6px}
+  .gfield input{width:100%; background:#0C1118; border:1px solid #232B36; border-radius:9px; padding:10px 12px; font:inherit; font-size:13.5px; color:#E7E4DD}
+  .gfield input::placeholder{color:#5A616D}
+  .gfield input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(27,122,87,.22)}
+  .gbtn{width:100%; border:1px solid var(--accent); background:var(--accent); color:#fff; font-weight:600; font-size:14px; padding:11px; border-radius:9px; cursor:pointer; margin-top:6px; transition:background .14s}
+  .gbtn:hover{background:var(--accent-deep)}
+  .gbtn.alt{background:transparent; color:#E7E4DD; border-color:#2A3340; margin-top:9px}
+  .gbtn.alt:hover{background:#161D27}
+  .gor{text-align:center; color:#5A616D; font-size:12px; margin:16px 0}
+  .gback{display:block; text-align:center; margin-top:18px; color:#3FA877; font-size:12.5px; font-weight:600; background:none; border:0; cursor:pointer; width:100%}
+  .gback:hover{text-decoration:underline}
+  .au-msg{text-align:center; font-size:12.5px; color:#3FA877; margin-top:13px; min-height:16px; line-height:1.4}
   .au-msg.err{color:#E08A6A}
-  .ph-logo{text-align:center; margin-bottom:18px}
-  .ph-word{font-family:"Cormorant Garamond",serif; font-weight:600; font-size:30px; letter-spacing:.18em; text-transform:uppercase; margin:10px 0 2px; color:var(--cream); padding-left:.18em}
-  .ph-tag{color:var(--coral); font-size:11.5px; letter-spacing:.05em}
-  .phmark .ph-arc{stroke:var(--coral); stroke-width:3; fill:none; stroke-linecap:round}
-  .phmark .ph-iris{stroke:var(--cream); stroke-width:3; fill:none}
-  .phmark .ph-pupil{fill:var(--coral)}
-  .phmark .ph-l{stroke:var(--cream); stroke-width:3; stroke-linecap:round; transform-box:fill-box; transform-origin:center}
-  .phmark .ph-l1{stroke:var(--coral)}
-  .phmark.dark .ph-iris,.phmark.dark .ph-l{stroke:var(--ink)}
-  .phmark.anim .ph-l0{animation:phA 3.4s ease-in-out infinite}
-  .phmark.anim .ph-l1{animation:phB 3.4s ease-in-out infinite}
-  .phmark.anim .ph-l2{animation:phC 3.4s ease-in-out infinite}
-  @keyframes phA{0%,100%{transform:translate(7px,-6px) rotate(-9deg); opacity:.5}38%,80%{transform:none; opacity:1}}
-  @keyframes phB{0%,100%{transform:translate(-9px,3px) rotate(7deg); opacity:.5}42%,80%{transform:none; opacity:1}}
-  @keyframes phC{0%,100%{transform:translate(5px,7px) rotate(-5deg); opacity:.5}46%,80%{transform:none; opacity:1}}
-  @media(prefers-reduced-motion:reduce){.phmark.anim .ph-l0,.phmark.anim .ph-l1,.phmark.anim .ph-l2{animation:none}}
+  .navlogout{margin-left:auto; width:30px; height:30px; border-radius:8px; border:0; background:none; color:var(--nav-muted); display:grid; place-items:center; cursor:pointer; flex-shrink:0}
+  .navlogout:hover{color:var(--nav-ink); background:#161B23}
+  .navlogout svg{width:16px; height:16px; stroke-width:1.9}
+
+  /* ===================== modal + toast ===================== */
+  .scrim{position:fixed; inset:0; z-index:85; background:rgba(8,11,16,.55); backdrop-filter:blur(3px); display:none; align-items:center; justify-content:center; padding:20px}
+  .scrim.on{display:flex}
+  .modal2{background:var(--surface); border:1px solid var(--line); border-radius:16px; max-width:520px; width:100%; max-height:88vh; overflow:auto; box-shadow:var(--shadow-pop); animation:mpop .16s ease}
+  @keyframes mpop{from{opacity:0; transform:translateY(8px) scale(.99)}to{opacity:1; transform:none}}
+  .m-h{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px; border-bottom:1px solid var(--line)}
+  .m-h h3{margin:0; font-size:16px; font-weight:700}
+  .m-b{padding:18px 20px}
+  .m-f{display:flex; justify-content:flex-end; gap:9px; padding:14px 20px; border-top:1px solid var(--line)}
+  .m-close{width:30px; height:30px; border:1px solid var(--line); background:var(--surface); border-radius:8px; display:grid; place-items:center; cursor:pointer; color:var(--muted)}
+  .m-close:hover{color:var(--ink); border-color:var(--ink-2)}
+  .m-close svg{width:15px; height:15px; stroke-width:2}
+  .field{margin-bottom:13px}
+  .field label{display:block; font-size:11.5px; font-weight:600; color:var(--muted); margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%; border:1px solid var(--line); background:var(--surface-2); border-radius:9px; padding:9px 11px; font:inherit; font-size:13px; color:var(--ink)}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--accent); background:var(--surface); box-shadow:0 0 0 3px var(--accent-tint)}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .btn.danger{background:var(--danger); border-color:var(--danger)}
+  .btn.danger:hover{background:#a8432d; border-color:#a8432d}
+
+  .toasts{position:fixed; right:20px; bottom:20px; z-index:95; display:flex; flex-direction:column; gap:9px; align-items:flex-end}
+  .toast{display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:10px; padding:11px 14px; box-shadow:var(--shadow-pop); font-size:13px; font-weight:500; min-width:220px; animation:tin .2s ease}
+  .toast svg{width:16px; height:16px; flex-shrink:0; stroke-width:2.2; color:var(--accent-deep)}
+  .toast.ok{border-left-color:var(--green)} .toast.ok svg{color:var(--green)}
+  .toast.warn{border-left-color:var(--amber)} .toast.warn svg{color:var(--amber)}
+  .toast.info{border-left-color:#2C6E8F} .toast.info svg{color:#2C6E8F}
+  @keyframes tin{from{opacity:0; transform:translateX(14px)}to{opacity:1; transform:none}}
+
+  /* ===================== página de componentes ===================== */
+  .ds-lead{color:var(--muted); margin:0 0 18px; max-width:580px; line-height:1.55}
+  .ds-lead b{color:var(--ink)}
+  .ds-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px}
+  .ds-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px}
+  .ds-card h4{margin:0 0 14px; font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); font-weight:700}
+  .ds-row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+  .ds-row+.ds-row{margin-top:11px}
+  .ds-stack{display:flex; flex-direction:column; gap:11px}
+  .type-spec{display:flex; align-items:baseline; gap:12px; padding:7px 0; border-bottom:1px solid var(--line-2)}
+  .type-spec:last-child{border-bottom:0}
+  .type-spec .tn{font-size:11px; color:var(--faint); width:64px; flex-shrink:0; font-family:var(--mono)}
+  .ds-note{font-size:12px; color:var(--muted)}
+
+  /* accent switcher (controle da concept, não faz parte do produto) */
+  .accentbar{display:flex; align-items:center; gap:12px; margin-bottom:18px; padding:10px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px; flex-wrap:wrap}
+  .accentbar .albl{font-size:12.5px; font-weight:600; color:var(--muted)}
+  .accentbar .albl b{color:var(--ink)}
+  .swatches{display:flex; gap:8px}
+  .sw{width:24px; height:24px; border-radius:7px; cursor:pointer; border:2px solid transparent; box-shadow:0 0 0 1px var(--line) inset; transition:transform .12s}
+  .sw:hover{transform:scale(1.12)}
+  .sw.on{border-color:var(--ink)}
+  .accentbar .hint{margin-left:auto; font-size:11.5px; color:var(--faint)}
+  @media(max-width:1080px){ .dash{grid-template-columns:1fr} .kpis{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:820px){ .app{grid-template-columns:1fr} .nav{display:none} .split{grid-template-columns:1fr} }
 </style>
-
-<div id="gate" class="gate" style="display:none"></div>
-
-<div id="appwrap" class="wrap" style="display:none">
-  <header class="top">
+</head>
+<body>
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="nav">
     <div class="brand">
-      <svg class="phmark" width="26" height="24" viewBox="0 0 120 110" aria-hidden="true"><path class="ph-arc" d="M22 48 Q60 18 98 48"/><circle class="ph-iris" cx="60" cy="46" r="9.5"/><circle class="ph-pupil" cx="60" cy="46" r="2.6"/><line class="ph-l ph-l0" x1="34" y1="70" x2="86" y2="70"/><line class="ph-l ph-l1" x1="40" y1="80" x2="80" y2="80"/><line class="ph-l ph-l2" x1="46" y1="90" x2="74" y2="90"/></svg>
-      <h1>Phosphoros<span class="dot">.</span></h1>
-      <small>gestão de talentos</small>
+      <span class="mark">
+        <svg width="18" height="18" viewBox="0 0 120 110" aria-hidden="true"><path d="M22 50 Q60 20 98 50" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/><circle cx="60" cy="48" r="9" stroke="#fff" stroke-width="8" fill="none"/></svg>
+      </span>
+      <div>
+        <div class="name">Phosphoros</div>
+        <div class="sub">gestão de talentos</div>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <span id="savePill" class="save-pill">salvo</span>
-      <span id="wsBox" class="bchip" style="color:var(--sage);background:var(--sage-soft);border:1px solid var(--sage)"></span>
-      <button class="iconbtn" title="Convidar sócia" onclick="showInvite()" style="width:auto;padding:0 10px;font-size:12.5px;font-weight:600">Convidar</button>
-      <span id="userBox" class="muted" style="font-size:12.5px"></span>
-      <button id="themeBtn" class="iconbtn" title="Alternar tema claro/escuro" onclick="toggleTheme()" style="width:auto;padding:0 10px;font-size:12.5px;font-weight:600">Escuro</button>
-      <button class="iconbtn" title="Sair" onclick="logout()" style="width:auto;padding:0 10px;font-size:12.5px;font-weight:600">Sair</button>
+
+    <div class="navsec">Menu</div>
+    <div class="navlist">
+      <button class="navitem active" data-go="painel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Painel
+      </button>
+      <button class="navitem" data-go="influ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.5a3 3 0 0 1 0 5.4M18 19a5.4 5.4 0 0 0-3-4.7"/></svg>
+        Influenciadores <span class="badge">20</span>
+      </button>
+      <button class="navitem" data-go="marcas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-4.5h15L21 9"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 9a3 3 0 0 0 6 0"/></svg>
+        Marcas <span class="badge">6</span>
+      </button>
+      <button class="navitem" data-go="camp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l14-6v14L3 13z"/><path d="M17 7a3 3 0 0 1 0 6"/><path d="M6 13v3a2 2 0 0 0 2 2h1"/></svg>
+        Campanhas <span class="badge">4</span>
+      </button>
     </div>
-  </header>
 
-  <nav class="tabs" id="tabs">
-    <button data-tab="painel" class="active">Painel</button>
-    <button data-tab="influ">Influenciadores</button>
-    <button data-tab="marcas">Marcas</button>
-    <button data-tab="camp">Campanhas</button>
-    <button data-tab="match">Match</button>
-  </nav>
+    <div class="navsec">Ferramentas</div>
+    <div class="navlist">
+      <button class="navitem" data-go="match">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>
+        Match de casting
+      </button>
+      <button class="navitem" data-go="ds">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Componentes
+      </button>
+    </div>
 
-  <section id="view"></section>
+    <div class="nav-foot">
+      <div class="nav-user">
+        <div class="ava" id="navAva">·</div>
+        <div class="who">
+          <div class="n" id="navName">—</div>
+          <div class="e" id="navEmail"></div>
+        </div>
+        <button class="navlogout" title="Sair" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <header class="topbar">
+      <h1 id="ptitle">Painel</h1>
+      <span class="crumb" id="pcrumb">· visão geral</span>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input placeholder="Buscar perfil, marca, campanha…">
+      </div>
+      <button class="icobtn" id="darkBtn" title="Tema claro/escuro" onclick="toggleDark()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></button>
+      <button class="icobtn" title="Notificações"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+      <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
+    </header>
+
+    <div class="content">
+      <div class="accentbar">
+        <span class="albl">Acento &nbsp;<b id="acName">Esmeralda</b></span>
+        <div class="swatches" id="swatches"></div>
+        <span class="hint">só o visual muda — dados ficam intactos</span>
+        <button class="btn ghost" style="margin-left:14px" onclick="loadExample()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2.2"><path d="M12 5v14M5 12h14"/></svg>Carregar exemplo</button>
+      </div>
+      <!-- ===== PAINEL ===== -->
+      <section class="view on" id="v-painel"></section>
+      <!-- ===== INFLUENCIADORES ===== -->
+      <section class="view" id="v-influ"></section>
+      <!-- ===== MARCAS ===== -->
+      <section class="view" id="v-marcas"></section>
+      <!-- ===== CAMPANHAS ===== -->
+      <section class="view" id="v-camp"></section>
+      <!-- ===== MATCH ===== -->
+      <section class="view" id="v-match"></section>
+      <!-- ===== COMPONENTES ===== -->
+      <section class="view" id="v-ds"></section>
+    </div>
+  </main>
 </div>
 
-<!-- modal host -->
-<div class="scrim" id="scrim"><div class="modal" id="modal"></div></div>
+<!-- ============ GATE: login / onboarding ============ -->
+<div id="gate" class="gate" style="display:none">
+  <div class="gate-card">
+    <div class="gate-logo">
+      <span class="gate-mark"><svg width="30" height="28" viewBox="0 0 120 110" aria-hidden="true"><path d="M22 50 Q60 20 98 50" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/><circle cx="60" cy="48" r="9" stroke="#fff" stroke-width="8" fill="none"/></svg></span>
+      <div style="text-align:center">
+        <div class="gate-word">PHOSPHOROS</div>
+        <div class="gate-tag">Clareza para quem gerencia talentos</div>
+      </div>
+    </div>
+    <div id="g-in">
+      <p class="gate-sub">Entre para acessar o painel da agência</p>
+      <div class="gfield"><label>E-mail</label><input id="au-email" type="email" placeholder="voce@email.com"></div>
+      <div class="gfield"><label>Senha</label><input id="au-pass" type="password" placeholder="mínimo 6 caracteres"></div>
+      <button class="gbtn" onclick="doLogin()">Entrar</button>
+      <button class="gbtn alt" onclick="doSignup()">Criar conta</button>
+      <div class="au-msg" id="au-msg"></div>
+    </div>
+
+    <div id="g-ob" style="display:none">
+      <p class="gate-sub">Como você quer começar?</p>
+      <div class="gfield"><label>Criar a sua agência</label><input id="ws-name" placeholder="Nome da sua agência"></div>
+      <button class="gbtn" onclick="doCreateWs()">Criar agência</button>
+      <div class="gor">— ou —</div>
+      <div class="gfield"><label>Entrar por convite</label><input id="ws-code" placeholder="Código de convite"></div>
+      <button class="gbtn alt" onclick="doJoinWs()">Entrar com código</button>
+      <div class="au-msg" id="ob-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ modal + toasts ============ -->
+<div class="scrim" id="scrim"><div class="modal2" id="modal2"></div></div>
+<div class="toasts" id="toasts"></div>
 
 <script>
-/* ============================ estado ============================ */
-/* ============================================================
-   Conexão com o Supabase.
-   BUILTIN_* = conexão fixa do site (preenchida 1x pelo dono).
-   A chave "publishable/anon" PODE ser pública — é protegida pelo RLS.
-   Com elas preenchidas, o usuário final NÃO vê nada de chave:
-   só faz login com e-mail e senha.
-   ============================================================ */
-const BUILTIN_URL = "https://efskrnrpqgtgkaiulrpb.supabase.co";   // <- dono cola a Project URL aqui
-const BUILTIN_KEY = "sb_publishable_BHuFybhaK0yANvm_NcOEJw_3vAsmnAI";   // <- dono cola a chave publishable aqui
-function normUrl(u){ u=(u||'').trim(); try{ return new URL(u).origin; }catch(e){ return u.replace(/\/+$/,''); } }
-let SUPABASE_URL = normUrl(BUILTIN_URL) || localStorage.getItem('sb_url') || "";
-let SUPABASE_KEY = BUILTIN_KEY || localStorage.getItem('sb_key') || "";
-
-let DB={ influencers:[], brands:[], campaigns:[], rates:{reel:50, story:20} };
-let sb=null, rtTimer=null, booted=false;
-let WS=null, WSNAME='', WSCODE='';   // agência (workspace) atual
-
-function seed(){
-  const raw=[
-    ["@mariannasdf",14000,"Millennials","REC","Moda e lifestyle"],
-    ["@mariaoucarolina",5000,"","REC","Moda"],
-    ["@dborahmendess",20000,"Gen Z","","Beauty e lifestyle"],
-    ["@ayanelemoss",4000,"Gen Z","REC","Modelo"],
-    ["@robertamirandaag",11000,"","REC","Provador, lifestyle e saúde"],
-    ["@claracvd",100000,"Gen Z","REC","Beauty e lifestyle"],
-    ["@leticiaboo_",10000,"Gen Z","REC","Maternidade e beauty"],
-    ["@claravida",120000,"Gen Z","REC","Lifestyle"],
-    ["@julianalatache",140000,"","REC","Maternidade e moda"],
-    ["@mjuliameireles",65000,"Gen Z","REC","Moda e lifestyle"],
-    ["@tataobana_",71000,"Gen Z","REC","Moda e lifestyle"],
-    ["@meduardapontual",55000,"Gen Z","REC","Moda e lifestyle"],
-    ["@camiccarv",13000,"","REC","Lifestyle"],
-    ["@deb.rocha",150000,"","JP","Perfumes e dicas"],
-    ["@dudarlucena",25000,"","Caruaru","Beauty e lifestyle"],
-    ["@milenaxlopez",30000,"Gen Z","RJ","Beauty"],
-    ["@daily_cidrack",30000,"","","Beauty"],
-    ["@malicemacdowell",120000,"Millennials","REC","Maternidade"],
-    ["@lecarossiter",40000,"Millennials","","Dicas e gastronomia"],
-    ["@cucaamorim",350000,"Millennials","REC","Maternidade e Beauty"],
-  ];
-  DB.influencers = raw.map((r,i)=>({
-    id:'i'+(i+1), ig:r[0], tiktok:"", followers:r[1], gen:r[2],
-    loc:r[3], niche:r[4], engaj:null, status:"ativo", notas:"",
-    brand:"", phone:"", email:""
-  }));
-  DB.brands=[
-    {id:'b1', name:"RN", contato:"", canal:"", niche:"Moda, Maternidade", status:"Ativa", ultimoContato:"2026-05-20", notas:"Respondeu — topou campanha de inverno"},
-    {id:'b2', name:"Marca exemplo", contato:"", canal:"", niche:"Beauty", status:"Prospect", ultimoContato:"", notas:""}
-  ];
-  const ju=DB.influencers.find(x=>x.ig==="@julianalatache"); if(ju) ju.brand="RN";
-  DB.campaigns=[
-    {id:'c1', titulo:"Coleção Inverno", brand:"RN", influs:[ju?ju.id:''].filter(Boolean),
-     valor:4000, entrega:"2026-06-10", pagamento:"2026-06-25", status:"A produzir", notas:"2 reels + 3 stories"}
-  ];
-}
-
-/* ===== camada de dados (Supabase) ===== */
-function configOk(){ return SUPABASE_URL.startsWith('http') && SUPABASE_KEY.length>20; }
-function flash(t,warn){ const p=document.getElementById('savePill'); if(!p)return; p.textContent=t; p.className='save-pill'+(warn?' warn':''); }
-async function sbLoadAll(){
-  const [inf,br,ca,st]=await Promise.all([
-    sb.from('influencers').select('id,data').eq('workspace_id',WS),
-    sb.from('brands').select('id,data').eq('workspace_id',WS),
-    sb.from('campaigns').select('id,data').eq('workspace_id',WS),
-    sb.from('settings').select('key,data').eq('workspace_id',WS).eq('key','rates')
-  ]);
-  DB.influencers=(inf.data||[]).map(r=>({...r.data,id:r.id}));
-  DB.brands=(br.data||[]).map(r=>({...r.data,id:r.id}));
-  DB.campaigns=(ca.data||[]).map(r=>({...r.data,id:r.id}));
-  DB.rates=(st.data&&st.data[0]&&st.data[0].data)||{reel:50,story:20};
-}
-async function sbUpsert(table,rec){ const {id,...rest}=rec; const {error}=await sb.from(table).upsert({id,workspace_id:WS,data:rest}); flash(error?'erro ao salvar':'salvo ✓', !!error); if(error)console.error(error); }
-async function sbDelete(table,id){ const {error}=await sb.from(table).delete().eq('id',id).eq('workspace_id',WS); if(error){flash('erro ao remover',1);console.error(error);} }
-async function sbRates(r){ const {error}=await sb.from('settings').upsert({workspace_id:WS,key:'rates',data:r}); flash(error?'erro':'salvo ✓', !!error); }
-async function loadExample(){
-  if(!confirm('Carregar o casting de exemplo nesta agência? Você pode editar/apagar depois.'))return;
-  seed();
-  for(const r of DB.influencers) await sbUpsert('influencers',r);
-  for(const r of DB.brands) await sbUpsert('brands',r);
-  for(const r of DB.campaigns) await sbUpsert('campaigns',r);
-  await sbRates(DB.rates); render();
-}
-async function resetExample(){ await loadExample(); }
-
-/* ===== sincronização ao vivo (opcional) ===== */
-function subscribeRealtime(){
-  ['influencers','brands','campaigns','settings'].forEach(t=>{
-    sb.channel('rt-'+t).on('postgres_changes',{event:'*',schema:'public',table:t},scheduleSync).subscribe();
-  });
-}
-function scheduleSync(){ clearTimeout(rtTimer); rtTimer=setTimeout(async()=>{ if(WS){ await sbLoadAll(); render(); } },350); }
-
-/* ===== login + agência (workspace) ===== */
-async function boot(){
-  if(!configOk()){ showSetup(); return; }
-  sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  sb.auth.onAuthStateChange((_e,session)=>{ session?afterLogin():showLogin(); });
-  const {data:{session}}=await sb.auth.getSession();
-  session?afterLogin():showLogin();
-}
-async function afterLogin(){
-  const {data:mem}=await sb.from('members').select('workspace_id, workspaces(name,invite_code)').limit(1);
-  if(!mem || !mem.length){ showOnboard(); return; }
-  WS=mem[0].workspace_id;
-  WSNAME=mem[0].workspaces?mem[0].workspaces.name:'';
-  WSCODE=mem[0].workspaces?mem[0].workspaces.invite_code:'';
-  document.getElementById('gate').style.display='none';
-  document.getElementById('appwrap').style.display='';
-  try{ const u=(await sb.auth.getUser()).data.user; const ub=document.getElementById('userBox'); if(ub) ub.textContent=u?u.email:''; }catch(e){}
-  const wb=document.getElementById('wsBox'); if(wb) wb.textContent=WSNAME;
-  await sbLoadAll(); render();
-  if(!booted){ subscribeRealtime(); booted=true; }
-}
-function phMark(size,animated){ return `<svg class="phmark ${animated?'anim':''}" width="${size}" height="${Math.round(size*110/120)}" viewBox="0 0 120 110" aria-hidden="true"><path class="ph-arc" d="M22 48 Q60 18 98 48"/><circle class="ph-iris" cx="60" cy="46" r="9.5"/><circle class="ph-pupil" cx="60" cy="46" r="2.6"/><line class="ph-l ph-l0" x1="34" y1="70" x2="86" y2="70"/><line class="ph-l ph-l1" x1="40" y1="80" x2="80" y2="80"/><line class="ph-l ph-l2" x1="46" y1="90" x2="74" y2="90"/></svg>`; }
-function showOnboard(){
-  const a=document.getElementById('appwrap'); if(a)a.style.display='none';
-  const g=document.getElementById('gate'); g.style.display='';
-  g.innerHTML=`<div class="gate-card card">
-    <div class="ph-logo">${phMark(78,true)}<div class="ph-word">Phosphoros<span class="dot">.</span></div><div class="ph-tag">Clareza para quem gerencia talentos</div></div>
-    <p class="muted" style="text-align:center;margin:0 0 18px;font-size:13.5px">Bem-vinda! Como você quer começar?</p>
-    <label class="fld">Criar a sua agência</label>
-    <input id="ob_name" placeholder="Nome da sua agência">
-    <button class="btn" style="width:100%;margin-top:9px" onclick="doCreateWs()">Criar agência</button>
-    <div style="text-align:center;margin:16px 0;color:var(--ink-soft);font-size:12px">— ou —</div>
-    <label class="fld">Entrar numa agência por convite</label>
-    <input id="ob_code" placeholder="Código de convite">
-    <button class="btn ghost" style="width:100%;margin-top:9px" onclick="doJoinWs()">Entrar com código</button>
-    <div id="ob_msg" class="au-msg"></div>
-    <div style="text-align:center;margin-top:14px"><button class="link" style="font-size:12px" onclick="logout()">Sair</button></div>
-  </div>`;
-}
-async function doCreateWs(){
-  const name=document.getElementById('ob_name').value.trim();
-  const msg=document.getElementById('ob_msg');
-  if(!name){ msg.textContent='Dê um nome pra sua agência.'; msg.className='au-msg err'; return; }
-  msg.textContent='Criando…'; msg.className='au-msg';
-  const {error}=await sb.rpc('create_workspace',{p_name:name});
-  if(error){ msg.textContent=error.message; msg.className='au-msg err'; return; }
-  afterLogin();
-}
-async function doJoinWs(){
-  const code=document.getElementById('ob_code').value.trim();
-  const msg=document.getElementById('ob_msg');
-  if(!code){ msg.textContent='Cole o código de convite.'; msg.className='au-msg err'; return; }
-  msg.textContent='Entrando…'; msg.className='au-msg';
-  const {error}=await sb.rpc('join_workspace',{p_code:code});
-  if(error){ msg.textContent='Código inválido.'; msg.className='au-msg err'; return; }
-  afterLogin();
-}
-function showInvite(){ alert('Código de convite da agência "'+WSNAME+'":\n\n'+WSCODE+'\n\nMande esse código pra sua sócia. Ela cria a conta dela e usa "Entrar com código" pra cair na mesma agência.'); }
-function showLogin(){
-  const a=document.getElementById('appwrap'); if(a)a.style.display='none';
-  const g=document.getElementById('gate'); g.style.display='';
-  g.innerHTML=`<div class="gate-card card">
-    <div class="ph-logo">${phMark(78,true)}<div class="ph-word">Phosphoros<span class="dot">.</span></div><div class="ph-tag">Clareza para quem gerencia talentos</div></div>
-    <p class="muted" style="text-align:center;margin:0 0 18px;font-size:13.5px">Entre para acessar o painel da agência</p>
-    <label class="fld">E-mail</label><input id="au_e" type="email" placeholder="voce@email.com">
-    <label class="fld" style="margin-top:11px">Senha</label><input id="au_p" type="password" placeholder="mínimo 6 caracteres">
-    <div id="au_msg" class="au-msg"></div>
-    <button class="btn" style="width:100%;margin-top:14px" onclick="doAuth('in')">Entrar</button>
-    <button class="btn ghost" style="width:100%;margin-top:9px" onclick="doAuth('up')">Criar conta</button>
-    ${configIsBuiltin()?'':'<div style="text-align:center;margin-top:14px"><button class="link" style="font-size:12px" onclick="reconfig()">Reconfigurar conexão</button></div>'}
-  </div>`;
-}
-function configIsBuiltin(){ return !!(normUrl(BUILTIN_URL) && BUILTIN_KEY); }
-async function doAuth(mode){
-  const em=document.getElementById('au_e').value.trim();
-  const pw=document.getElementById('au_p').value;
-  const msg=document.getElementById('au_msg');
-  if(!em||!pw){ msg.textContent='Preencha e-mail e senha.'; msg.className='au-msg err'; return; }
-  msg.textContent='Aguarde…'; msg.className='au-msg';
-  const {error}= mode==='in'
-    ? await sb.auth.signInWithPassword({email:em,password:pw})
-    : await sb.auth.signUp({email:em,password:pw});
-  if(error){ msg.textContent=error.message; msg.className='au-msg err'; }
-  else if(mode==='up'){ msg.textContent='Conta criada! Se pedir confirmação por e-mail, confirme e depois entre.'; msg.className='au-msg'; }
-}
-async function logout(){ WS=null; WSNAME=''; booted=false; await sb.auth.signOut(); }
-function reconfig(){ localStorage.removeItem('sb_url'); localStorage.removeItem('sb_key'); SUPABASE_URL=''; SUPABASE_KEY=''; sb=null; booted=false; WS=null; showSetup(); }
-function showSetup(){
-  const a=document.getElementById('appwrap'); if(a)a.style.display='none';
-  const g=document.getElementById('gate'); g.style.display='';
-  g.innerHTML=`<div class="gate-card card">
-    <div class="ph-logo">${phMark(78,true)}<div class="ph-word">Phosphoros<span class="dot">.</span></div><div class="ph-tag">Clareza para quem gerencia talentos</div></div>
-    <p class="muted" style="text-align:center;margin:0 0 16px;font-size:13.5px">Conexão do app (só o dono faz isto)</p>
-    <label class="fld">URL do projeto</label><input id="cf_u" placeholder="https://xxxxx.supabase.co" value="${SUPABASE_URL||''}">
-    <label class="fld" style="margin-top:11px">Chave publishable / anon</label><input id="cf_k" placeholder="sb_publishable_... ou eyJ..." value="${SUPABASE_KEY||''}">
-    <div id="cf_msg" class="au-msg"></div>
-    <button class="btn" style="width:100%;margin-top:14px" onclick="saveSetup()">Conectar</button>
-    <p class="muted" style="font-size:11.5px;margin-top:14px;line-height:1.5">A URL está em Supabase → Project Settings → Data API. A chave está em API Keys (use a <b>Publishable</b>). Pode colar a URL com barra no final que eu ajusto sozinho.</p>
-  </div>`;
-}
-function saveSetup(){
-  const u=normUrl(document.getElementById('cf_u').value);
-  const k=document.getElementById('cf_k').value.trim();
-  const msg=document.getElementById('cf_msg');
-  if(!u.startsWith('http')||!u.includes('.supabase.')){ msg.textContent='A URL parece incorreta. Deve ser algo como https://xxxxx.supabase.co'; msg.className='au-msg err'; return; }
-  if(k.length<20){ msg.textContent='A chave parece curta demais. Copie a chave Publishable/anon completa.'; msg.className='au-msg err'; return; }
-  localStorage.setItem('sb_url',u); localStorage.setItem('sb_key',k);
-  SUPABASE_URL=u; SUPABASE_KEY=k; boot();
-}
-
-/* ============================ helpers ============================ */
+/* ---- dados de exemplo (mesmos do app real) ---- */
+const RAW=[
+  ["@cucaamorim",350000,"Millennials","REC","Maternidade e Beauty"],
+  ["@deb.rocha",150000,"","JP","Perfumes e dicas"],
+  ["@julianalatache",140000,"","REC","Maternidade e moda","RN"],
+  ["@claravida",120000,"Gen Z","REC","Lifestyle"],
+  ["@malicemacdowell",120000,"Millennials","REC","Maternidade"],
+  ["@claracvd",100000,"Gen Z","REC","Beauty e lifestyle"],
+  ["@tataobana_",71000,"Gen Z","REC","Moda e lifestyle"],
+  ["@mjuliameireles",65000,"Gen Z","REC","Moda e lifestyle"],
+  ["@meduardapontual",55000,"Gen Z","REC","Moda e lifestyle"],
+  ["@lecarossiter",40000,"Millennials","","Dicas e gastronomia"],
+  ["@milenaxlopez",30000,"Gen Z","RJ","Beauty"],
+  ["@daily_cidrack",30000,"","","Beauty"],
+  ["@dudarlucena",25000,"","Caruaru","Beauty e lifestyle"],
+  ["@dborahmendess",20000,"Gen Z","","Beauty e lifestyle"],
+  ["@mariannasdf",14000,"Millennials","REC","Moda e lifestyle"],
+  ["@camiccarv",13000,"","REC","Lifestyle"],
+  ["@robertamirandaag",11000,"","REC","Provador, lifestyle e saúde"],
+  ["@leticiaboo_",10000,"Gen Z","REC","Maternidade e beauty"],
+  ["@mariaoucarolina",5000,"","REC","Moda"],
+  ["@ayanelemoss",4000,"Gen Z","REC","Modelo"],
+];
 const LOCS={REC:"Recife",JP:"João Pessoa",RJ:"Rio de Janeiro",Caruaru:"Caruaru"};
-const uid=p=>p+Math.random().toString(36).slice(2,8);
-function tierOf(f){ if(f<10000)return["nano","t-nano"]; if(f<100000)return["micro","t-micro"]; if(f<1000000)return["macro","t-macro"]; return["mega","t-mega"]; }
-function fmtN(n){ if(n>=1000000)return (n/1000000).toFixed(n%1000000?1:0)+"M"; if(n>=1000)return (n/1000).toFixed(n%1000?1:0)+"k"; return ""+n; }
-function fmtMoney(n){ return "R$ "+Math.round(n).toLocaleString("pt-BR"); }
-function nicheTags(s){ return (s||"").split(/,|\be\b/i).map(x=>x.trim()).filter(Boolean); }
-function reelValue(f){ return f/1000*DB.rates.reel; }
-function postValue(i){ return (i.cache>0)?+i.cache:reelValue(+i.followers); }
-function storyValue(f){ return f/1000*DB.rates.story; }
-function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
-const BRANDPAL=['#D85A3A','#5B6B4F','#7A4A63','#C29A3B','#3A6B8C','#9B5524','#4F7A6B','#A03A52'];
-function brandColor(name){ let h=0; for(const ch of name)h=(h*31+ch.charCodeAt(0))>>>0; return BRANDPAL[h%BRANDPAL.length]; }
-function brandChip(name){ if(!name)return '<span class="muted">—</span>'; const c=brandColor(name); return `<span class="bchip" style="color:${c};background:${c}1a;border:1px solid ${c}40">${esc(name)}</span>`; }
-const TODAY=new Date(); TODAY.setHours(0,0,0,0);
-function fmtDate(iso){ if(!iso)return '—'; const[y,m,d]=iso.split('-'); return `${d}/${m}`; }
-function daysUntil(iso){ if(!iso)return null; const t=new Date(iso+'T00:00:00'); return Math.round((t-TODAY)/864e5); }
-function dueChip(iso,label){ if(!iso)return '<span class="muted">—</span>'; const d=daysUntil(iso); let cl='due-ok',tag=''; if(d<0){cl='due-late';tag=` · ${label} atrasado`;} else if(d<=3){cl='due-soon';tag=` · em ${d}d`;} return `<span class="due ${cl}">${fmtDate(iso)}${tag}</span>`; }
-const BRAND_STATUS={"Prospect":"#6E6558","Contatado":"#A8843F","Respondeu":"#BC8A36","Ativa":"#5B6B4F","Sem retorno":"#9C958A","Pausada":"#AE5638"};
-const CAMP_STATUS={"A produzir":"#BC8A36","Conteúdo entregue":"#6E6558","Aguardando pagamento":"#AE5638","Pago":"#5B6B4F"};
-function statusChip(s,map){ const c=map[s]||"#888"; return `<span class="bchip" style="color:${c};background:${c}1a;border:1px solid ${c}40">${esc(s||'—')}</span>`; }
+let RATE_REEL=50, RATE_STORY=20;
+let INF=[], BRANDS=[], CAMPAIGNS=[];
+const SEED_INF=()=>RAW.map((r,i)=>({id:'seed_i'+i,ig:r[0],followers:r[1],gen:r[2],loc:r[3],niche:r[4],brand:r[5]||""}));
 
-/* ============================ router ============================ */
-let TAB='painel';
-document.getElementById('tabs').addEventListener('click',e=>{
-  const b=e.target.closest('button[data-tab]'); if(!b)return;
-  TAB=b.dataset.tab;
-  [...document.querySelectorAll('#tabs button')].forEach(x=>x.classList.toggle('active',x===b));
-  render();
-});
-function render(){
-  const v=document.getElementById('view');
-  if(TAB==='painel')v.innerHTML=viewPainel();
-  if(TAB==='influ'){v.innerHTML=viewInflu(); wireInflu();}
-  if(TAB==='marcas'){v.innerHTML=viewMarcas(); wireMarcas();}
-  if(TAB==='camp'){v.innerHTML=viewCamp();}
-  if(TAB==='match'){v.innerHTML=viewMatch(); wireMatch();}
+/* ---- dados de exemplo: marcas e campanhas (mesmos campos do produto) ---- */
+const SEED_BRANDS=[
+  {id:'b1',name:'RN',status:'Ativa',niche:'Moda, Maternidade',contato:'Marina (mkt)',ult:'2026-05-20',notas:'Respondeu — topou a campanha de inverno'},
+  {id:'b2',name:'Lumière Beauty',status:'Respondeu',niche:'Beauty',contato:'Camila',ult:'2026-05-18',notas:'Quer ver casting de beauty Gen Z'},
+  {id:'b3',name:'Café Norte',status:'Ativa',niche:'Lifestyle, Gastronomia',contato:'João',ult:'2026-05-22',notas:'Recorrente — 1 ação por mês'},
+  {id:'b4',name:'Studio Maré',status:'Contatado',niche:'Moda',contato:'—',ult:'2026-05-25',notas:'Mídia kit enviado, aguardando retorno'},
+  {id:'b5',name:'Derma+',status:'Prospect',niche:'Beauty, Saúde',contato:'—',ult:'',notas:''},
+  {id:'b6',name:'Aurora Kids',status:'Sem retorno',niche:'Maternidade',contato:'—',ult:'2026-05-02',notas:'2 follow-ups sem resposta'},
+];
+const SEED_CAMPS=[
+  {id:'c1',titulo:'Coleção Inverno',brand:'RN',influs:['@julianalatache'],valor:4000,entrega:'2026-06-10',pag:'2026-06-25',status:'A produzir',notas:'2 reels + 3 stories'},
+  {id:'c2',titulo:'Lançamento Sérum',brand:'Lumière Beauty',influs:['@claracvd','@milenaxlopez'],valor:6500,entrega:'2026-06-18',pag:'2026-07-05',status:'Conteúdo entregue',notas:'1 reel cada + bastidores'},
+  {id:'c3',titulo:'Especial Namorados',brand:'Café Norte',influs:['@lecarossiter'],valor:2200,entrega:'2026-06-04',pag:'2026-06-20',status:'Aguardando pagamento',notas:''},
+  {id:'c4',titulo:'Prévia Verão',brand:'Studio Maré',influs:['@meduardapontual'],valor:3000,entrega:'2026-07-20',pag:'',status:'A produzir',notas:'Briefing em definição'},
+];
+const TODAY=(()=>{const d=new Date();d.setHours(0,0,0,0);return d;})();
+const daysUntil=iso=>iso?Math.round((new Date(iso+'T00:00:00')-TODAY)/864e5):null;
+const fmtDate=iso=>{if(!iso)return '—';const p=iso.split('-');return p[2]+'/'+p[1];};
+const dash='<span style="color:var(--faint)">—</span>';
+const BRAND_STATUS={Prospect:'#727A87',Contatado:'#2C6E8F',Respondeu:'#B07514',Ativa:'#1B7A57','Sem retorno':'#9AA1AD',Pausada:'#C2543B'};
+const CAMP_STATUS={'A produzir':'#B07514','Conteúdo entregue':'#2C6E8F','Aguardando pagamento':'#C2543B','Pago':'#1B7A57'};
+function statusChip(s,map){const c=map[s]||'#888';return `<span class="st" style="color:${c};background:${c}1a">${esc(s||'—')}</span>`;}
+const BPAL=['#2C6E8F','#1B7A57','#7A4A63','#B07514','#546B4E','#9B5524'];
+function bhash(n){let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))>>>0;return BPAL[h%BPAL.length];}
+function brandTag(name){if(!name)return dash;const c=bhash(name);return `<span class="st" style="color:${c};background:${c}1a">${esc(name)}</span>`;}
+function dueCell(iso,done){if(!iso)return dash;if(done)return `<span class="due done">${fmtDate(iso)} ✓</span>`;const d=daysUntil(iso);let cl='ok',tag=` · em ${d}d`;if(d<0){cl='late';tag=' · atrasado';}else if(d===0){cl='soon';tag=' · hoje';}else if(d<=3){cl='soon';}return `<span class="due ${cl}">${fmtDate(iso)}${tag}</span>`;}
+function postValue(i){return (i.cache&&+i.cache>0)?+i.cache:reelVal(i.followers);}
+
+const fmtN=n=>n>=1e6?(n/1e6).toFixed(n%1e6?1:0)+"M":n>=1e3?(n/1e3).toFixed(n%1e3?1:0)+"k":""+n;
+const fmtMoney=n=>"R$ "+Math.round(n).toLocaleString("pt-BR");
+const tierOf=f=>f<1e4?["nano","t-nano"]:f<1e5?["micro","t-micro"]:f<1e6?["macro","t-macro"]:["mega","t-mega"];
+const reelVal=f=>f/1000*RATE_REEL;
+const nicheTags=s=>(s||"").split(/,|\be\b/i).map(x=>x.trim()).filter(Boolean);
+const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* monograma de avatar — tom por tier, plano (sem gradiente), segue o acento */
+function avatar(ig,f){const t=tierOf(f)[0];const ini=(ig.replace('@','')[0]||'?').toUpperCase();return `<div class="mono-ava av-${t}">${ini}</div>`;}
+
+/* sparkline decorativa */
+function spark(points,color){
+  const w=78,h=30,mx=Math.max(...points),mn=Math.min(...points);
+  const pts=points.map((p,i)=>`${(i/(points.length-1)*w).toFixed(1)},${(h-2-(p-mn)/(mx-mn||1)*(h-6)).toFixed(1)}`).join(' ');
+  const last=pts.split(' ').pop().split(',');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" fill="none"><polyline points="${pts}" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2" fill="${color}"/></svg>`;
 }
 
-/* ============================ PAINEL ============================ */
-function welcomeDone(){ try{ return localStorage.getItem('ph_welcome_done')==='1'; }catch(e){ return false; } }
-function dismissWelcome(){ try{ localStorage.setItem('ph_welcome_done','1'); }catch(e){} render(); }
-function viewWelcome(){
-  const steps=[
-    {done:DB.influencers.length>0, label:'Cadastrar o primeiro influenciador', fn:'openInflu()'},
-    {done:DB.brands.length>0,      label:'Cadastrar a primeira marca',        fn:'openBrand()'},
-    {done:DB.campaigns.length>0,   label:'Criar a primeira campanha',         fn:'openCamp()'},
-  ];
-  if(welcomeDone() || steps.every(s=>s.done)) return '';
-  return `<div class="card pad welcome">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-      <div><h2 class="sec">Bem-vinda ao Phosphoros 👋</h2>
-      <p class="muted" style="margin:2px 0 14px;font-size:13px">Uns passos rápidos pra se situar — tudo opcional:</p></div>
-      <button class="link" style="font-size:12px;white-space:nowrap" onclick="dismissWelcome()">dispensar</button>
-    </div>
-    ${steps.map(s=>`<div class="wstep ${s.done?'wdone':''}" ${s.done?'':`onclick="${s.fn}"`}>
-      <span class="wcheck">${s.done?'✓':''}</span><span>${s.label}</span>${s.done?'':'<span class="wgo">→</span>'}
-    </div>`).join('')}
-    <p class="muted" style="font-size:12px;margin-top:10px">Dica: em <b>Dados</b>, abaixo, dá pra carregar um casting de exemplo pra testar.</p>
-  </div>`;
-}
-function viewPainel(){
-  const inf=DB.influencers;
-  const total=inf.length;
-  const reach=inf.reduce((a,b)=>a+(+b.followers||0),0);
+/* ---------- PAINEL ---------- */
+function renderPainel(){
+  const total=INF.length;
+  const reach=INF.reduce((a,b)=>a+b.followers,0);
   const avg=total?reach/total:0;
-  const eng=inf.filter(i=>i.engaj!=null);
-  const avgEng=eng.length?eng.reduce((a,b)=>a+(+b.engaj),0)/eng.length:null;
-
-  // por tier
+  const rosterVal=INF.reduce((a,b)=>a+postValue(b),0);
   const tiers={nano:0,micro:0,macro:0,mega:0};
-  inf.forEach(i=>{ tiers[tierOf(+i.followers)[0]]++; });
-  const tierColors={nano:'#b6ab97',micro:'var(--sage)',macro:'var(--coral)',mega:'var(--plum)'};
+  INF.forEach(i=>tiers[tierOf(i.followers)[0]]++);
+  const tierMeta={nano:["Nano","< 10k"],micro:["Micro","10k–100k"],macro:["Macro","100k–1M"],mega:["Mega","1M+"]};
 
-  // por nicho (tag primária)
   const nm={};
-  inf.forEach(i=>nicheTags(i.niche).forEach(t=>{const k=t.toLowerCase(); nm[k]=(nm[k]||0)+1;}));
-  const niches=Object.entries(nm).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const maxN=Math.max(1,...niches.map(n=>n[1]));
+  INF.forEach(i=>nicheTags(i.niche).forEach(t=>{const k=t.toLowerCase();nm[k]=(nm[k]||0)+1;}));
+  const niches=Object.entries(nm).sort((a,b)=>b[1]-a[1]).slice(0,8);
 
-  // valor estimado do roster (1 reel cada)
-  const rosterReel=inf.reduce((a,b)=>a+postValue(b),0);
+  /* agenda real (a partir das campanhas) */
+  const _ev=[];
+  CAMPAIGNS.forEach(c=>{
+    const entregue=['Conteúdo entregue','Aguardando pagamento','Pago'].includes(c.status);
+    if(c.entrega&&!entregue) _ev.push({kind:'Entrega',cls:'e',iso:c.entrega,c});
+    if(c.pag&&c.status!=='Pago') _ev.push({kind:'Pagamento',cls:'p',iso:c.pag,c});
+  });
+  _ev.sort((a,b)=>a.iso.localeCompare(b.iso));
+  const _whenT=d=>d<0?`${-d}d atrás`:d===0?'hoje':`em ${d}d`;
+  const _stOf=d=>d<0?'late':d<=3?'soon':'';
+  const agenda=_ev.slice(0,4).map(e=>{const d=daysUntil(e.iso);return{kind:e.kind,cls:e.cls,when:_whenT(d),state:_stOf(d),desc:`<b>${esc(e.c.titulo)}</b> · ${e.kind==='Pagamento'?fmtMoney(e.c.valor):esc(e.c.brand)}`};});
+  const aReceber=CAMPAIGNS.filter(c=>c.status!=='Pago').reduce((a,b)=>a+(+b.valor||0),0);
+  const nextPay=_ev.filter(e=>e.kind==='Pagamento')[0];
 
-  return `
-  ${viewWelcome()}
-  <div class="stat-row">
-    <div class="card stat"><div class="k">${total}</div><div class="l">Influenciadores</div></div>
-    <div class="card stat"><div class="k">${fmtN(reach)}</div><div class="l">Alcance somado</div><div class="sub">média ${fmtN(Math.round(avg))}/perfil</div></div>
-    <div class="card stat"><div class="k">${avgEng!=null?avgEng.toFixed(1)+'%':'—'}</div><div class="l">Engajamento médio</div><div class="sub">${eng.length}/${total} preenchidos</div></div>
-    <div class="card stat"><div class="k" style="font-size:23px">${fmtMoney(rosterReel)}</div><div class="l">Valor · 1 post por perfil</div></div>
+  document.getElementById('v-painel').innerHTML=`
+  <div class="kpis">
+    <div class="card kpi">
+      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>Influenciadores</div>
+      <div class="val num">${total}</div>
+      <div class="meta"><span class="note">na carteira</span></div>
+    </div>
+    <div class="card kpi">
+      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7"/><circle cx="12" cy="12" r="2.5"/></svg>Alcance somado</div>
+      <div class="val num">${fmtN(reach)}</div>
+      <div class="meta"><span class="note">média ${fmtN(Math.round(avg))}/perfil</span></div>
+    </div>
+    <div class="card kpi">
+      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M8 7h6a2.5 2.5 0 0 1 0 5H8m0 0h7"/></svg>Valor do casting</div>
+      <div class="val num">${fmtMoney(rosterVal).replace('R$ ','R$')}<span class="unit"></span></div>
+      <div class="meta"><span class="delta flat">1 post/perfil</span><span class="note">base da tabela atual</span></div>
+    </div>
+    <div class="card kpi">
+      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>A receber</div>
+      <div class="val num">${fmtMoney(aReceber).replace('R$ ','R$')}</div>
+      <div class="meta"><span class="note">${nextPay?('vence '+_whenT(daysUntil(nextPay.iso))):'sem pagamentos abertos'}</span></div>
+    </div>
   </div>
 
-  <div class="two">
+  <div class="dash">
     <div class="card pad">
-      <h2 class="sec">Nichos do casting</h2>
-      <p class="muted" style="margin:0 0 14px;font-size:13px">Distribuição automática por tag de nicho</p>
-      ${niches.map(([n,c])=>`
-        <div class="bar-item">
-          <div class="name">${esc(n)}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${c/maxN*100}%;background:var(--coral)"></div></div>
-          <div class="val">${c}</div>
-        </div>`).join('')||'<p class="muted">Sem dados.</p>'}
-    </div>
-
-    <div class="card pad">
-      <h2 class="sec">Por porte</h2>
-      <p class="muted" style="margin:0 0 14px;font-size:13px">Classificação automática pelo nº de seguidores</p>
-      ${Object.entries(tiers).map(([t,c])=>`
-        <div class="bar-item">
-          <div class="name">${t}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${c/Math.max(1,total)*100}%;background:${tierColors[t]}"></div></div>
-          <div class="val">${c}</div>
-        </div>`).join('')}
-    </div>
-  </div>
-
-  <div class="two" style="grid-template-columns:1fr 1fr">
-    <div class="card pad">
-      <h2 class="sec">Tabela de preços</h2>
-      <p class="muted" style="margin:0 0 14px;font-size:13px">Base do cálculo automático de valor (por 1.000 seguidores)</p>
-      <div class="grid-form">
-        <div><label class="fld">Reel · R$ / 1k</label><input type="number" id="rateReel" value="${DB.rates.reel}"></div>
-        <div><label class="fld">Story · R$ / 1k</label><input type="number" id="rateStory" value="${DB.rates.story}"></div>
+      <div class="ctitle"><h3>Distribuição por porte</h3><span class="count" style="font-family:var(--mono)">${total} perfis</span></div>
+      <div class="bars">
+        ${Object.keys(tiers).map(t=>{
+          const c=tiers[t]; const[nm,rg]=tierMeta[t];
+          return `<div class="bar">
+            <div class="bn">${nm}<small>${rg}</small></div>
+            <div class="track"><div class="fill" style="width:${c/total*100}%;background:${t==='macro'?'var(--accent)':t==='micro'?'var(--green)':t==='mega'?'#7A4A63':'#C7CCD4'}"></div></div>
+            <div class="bv">${c}</div>
+          </div>`;
+        }).join('')}
       </div>
-      <p class="muted" style="font-size:12px;margin-top:12px">Ex.: um perfil de 100k → reel ${fmtMoney(reelValue(100000))}, story ${fmtMoney(storyValue(100000))}. Ajuste pros valores reais da sua agência.</p>
+      <div class="ctitle" style="margin-top:22px"><h3>Nichos do casting</h3></div>
+      <div class="niches">
+        ${niches.map(([n,c])=>`<span class="ntag">${esc(n)} <span class="c">${c}</span></span>`).join('')}
+      </div>
     </div>
+
     <div class="card pad">
-      <h2 class="sec">Dados</h2>
-      <p class="muted" style="margin:0 0 14px;font-size:13px">Seu casting fica salvo automaticamente no navegador.</p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn ghost" onclick="exportCsv()">Exportar CSV</button>
-        <button class="btn ghost" onclick="resetExample()">Carregar dados de exemplo</button>
+      <div class="ctitle"><h3>Próximos prazos</h3><span class="link">Ver agenda →</span></div>
+      <div class="tl">
+        ${agenda.map(a=>`<div class="tl-row ${a.state}">
+          <div class="tl-top">
+            <span class="tl-kind ${a.cls}">${a.kind}</span>
+            <span class="tl-when ${a.state}">${a.when}</span>
+          </div>
+          <div class="tl-desc">${a.desc}</div>
+        </div>`).join('')}
+      </div>
+      <div class="note-strip" style="margin-top:16px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span><b>Engajamento:</b> complete 20 perfis para ativar a média da carteira e o ranking de performance.</span>
       </div>
     </div>
   </div>`;
 }
-let ratesTimer;
-document.addEventListener('input',e=>{
-  if(e.target.id==='rateReel'){DB.rates.reel=+e.target.value||0; queueRates();}
-  if(e.target.id==='rateStory'){DB.rates.story=+e.target.value||0; queueRates();}
-});
-function queueRates(){ clearTimeout(ratesTimer); ratesTimer=setTimeout(()=>sbRates(DB.rates),500); }
 
-/* ============================ INFLUENCIADORES ============================ */
-let fState={q:'',niche:'all',tier:'all',sort:'followers',dir:-1};
-function viewInflu(){
-  const allNiches=[...new Set(DB.influencers.flatMap(i=>nicheTags(i.niche).map(t=>t.toLowerCase())))].sort();
-  let rows=DB.influencers.filter(i=>{
-    const q=fState.q.toLowerCase();
-    const hit=!q || (i.ig+i.niche+i.loc+i.gen+(i.brand||'')).toLowerCase().includes(q);
-    const nN=fState.niche==='all'||nicheTags(i.niche).map(t=>t.toLowerCase()).includes(fState.niche);
-    const tN=fState.tier==='all'||tierOf(+i.followers)[0]===fState.tier;
-    return hit&&nN&&tN;
-  });
-  rows.sort((a,b)=>{
-    let x=a[fState.sort],y=b[fState.sort];
-    if(fState.sort==='followers'){x=+x;y=+y;} else {x=(''+x).toLowerCase();y=(''+y).toLowerCase();}
-    return x<y?-fState.dir:x>y?fState.dir:0;
-  });
-  return `
+/* ---------- INFLUENCIADORES ---------- */
+function renderInflu(){
+  const rows=INF.slice().sort((a,b)=>b.followers-a.followers);
+  document.getElementById('v-influ').innerHTML=`
   <div class="toolbar">
     <div class="search">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input id="fq" placeholder="Buscar perfil, nicho, cidade…" value="${esc(fState.q)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input placeholder="Buscar perfil, nicho, cidade…">
     </div>
-    <select id="fniche">
-      <option value="all">Todos os nichos</option>
-      ${allNiches.map(n=>`<option value="${n}" ${fState.niche===n?'selected':''}>${esc(n)}</option>`).join('')}
-    </select>
-    <select id="ftier">
-      ${['all','nano','micro','macro','mega'].map(t=>`<option value="${t}" ${fState.tier===t?'selected':''}>${t==='all'?'Todos os portes':t}</option>`).join('')}
-    </select>
-    <select id="fsort">
-      ${[['followers:-1','Mais seguidores'],['followers:1','Menos seguidores'],['ig:1','A–Z'],['brand:1','Por marca']].map(([v,l])=>`<option value="${v}" ${fState.sort+':'+fState.dir===v?'selected':''}>${l}</option>`).join('')}
-    </select>
-    <button class="btn" onclick="openInflu()">+ Novo</button>
+    <div class="seg">
+      <button class="on">Todos</button><button>Nano</button><button>Micro</button><button>Macro</button>
+    </div>
+    <div class="spacer"></div>
+    <span class="count">${rows.length} perfis · porte e valor automáticos</span>
+    <button class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Novo perfil</button>
   </div>
-
-  <div class="inf-grid">
-    ${rows.length?rows.map(i=>{
-      const[t,cl]=tierOf(+i.followers);
-      const init=esc((i.ig.replace('@','')[0]||'?').toUpperCase());
-      const meta=[LOCS[i.loc]||i.loc||'', i.gen||''].filter(Boolean).join(' · ')||'sem local';
-      return `<div class="inf-card">
+  <div class="grid">
+    ${rows.map(i=>{
+      const[t,cl]=tierOf(i.followers);
+      const meta=[LOCS[i.loc]||i.loc||'', i.gen||''].filter(Boolean).join(' · ')||'—';
+      return `<div class="inf">
+        ${i.brand?`<span class="linkflag">${esc(i.brand)}</span>`:''}
         <div class="inf-top">
-          <div class="av av-lg">${init}</div>
-          <div style="flex:1;min-width:0">
-            <a class="inf-handle" href="https://instagram.com/${i.ig.replace('@','')}" target="_blank" rel="noopener">${esc(i.ig)}</a>
-            <div class="inf-meta">${esc(meta)}${i.tiktok?` · <a class="tt-link" href="https://www.tiktok.com/@${i.tiktok.replace('@','')}" target="_blank" rel="noopener">TikTok ↗</a>`:''}</div>
+          ${avatar(i.ig,i.followers)}
+          <div class="inf-id">
+            <div class="inf-h"><a href="https://instagram.com/${i.ig.replace('@','')}" target="_blank" rel="noopener">${esc(i.ig)}</a></div>
+            <div class="inf-sub">${esc(meta)}</div>
           </div>
-          <div class="inf-rowbtns">
-            <button class="iconbtn" title="Editar" onclick="openInflu('${i.id}')">✎</button>
-            <button class="iconbtn" title="Remover" onclick="delInflu('${i.id}')">🗑</button>
+          <div class="inf-acts">
+            <button class="miniico" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>
+            <button class="miniico" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"/></svg></button>
           </div>
         </div>
-        <div class="inf-stat">
-          <div><span class="inf-foll">${fmtN(+i.followers)}</span> <span class="muted" style="font-size:12.5px">seguidores</span></div>
+        <div class="inf-mid">
+          <div><span class="inf-foll num">${fmtN(i.followers)}</span><span class="u">seguidores</span></div>
           <span class="tier ${cl}">${t}</span>
         </div>
-        <div class="inf-line">${i.brand?brandChip(i.brand):'<span class="muted" style="font-size:12.5px">sem marca conectada</span>'}</div>
-        <div class="inf-niches">${nicheTags(i.niche).map(n=>`<span class="niche-chip">${esc(n)}</span>`).join('')||'<span class="muted">—</span>'}</div>
+        <div class="inf-niches">${nicheTags(i.niche).map(n=>`<span class="chip">${esc(n)}</span>`).join('')}</div>
         <div class="inf-foot">
-          <button class="contact-btn" onclick="contactMenu('${i.id}',event)">✉ Contato</button>
-          <span class="muted" style="font-size:12px">${i.cache>0?'cachê '+fmtMoney(+i.cache):'reel ~ '+fmtMoney(reelValue(+i.followers))}</span>
+          <span class="inf-val">reel ~ <b>${fmtMoney(reelVal(i.followers))}</b></span>
+          <button class="contact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Contato</button>
         </div>
       </div>`;
-    }).join(''):`<div class="card empty" style="grid-column:1/-1">Nenhum perfil encontrado.</div>`}
+    }).join('')}
   </div>
-  <p class="muted" style="font-size:12.5px;margin-top:14px">${rows.length} de ${DB.influencers.length} perfis · porte e valor calculados automaticamente</p>`;
-}
-function wireInflu(){
-  const q=document.getElementById('fq');
-  q.oninput=()=>{fState.q=q.value; const p=q.selectionStart; render(); const nq=document.getElementById('fq'); nq.focus(); nq.setSelectionRange(p,p);};
-  document.getElementById('fniche').onchange=e=>{fState.niche=e.target.value; render();};
-  document.getElementById('ftier').onchange=e=>{fState.tier=e.target.value; render();};
-  document.getElementById('fsort').onchange=e=>{const[s,d]=e.target.value.split(':'); fState.sort=s; fState.dir=+d; render();};
-}
-async function delInflu(id){ if(!confirm('Remover este perfil?'))return; DB.influencers=DB.influencers.filter(i=>i.id!==id); render(); await sbDelete('influencers',id); }
-function openInflu(id){
-  const i = id?DB.influencers.find(x=>x.id===id):{ig:'',tiktok:'',followers:'',gen:'',loc:'',niche:'',engaj:'',status:'ativo',notas:'',brand:'',phone:'',email:'',cache:''};
-  modal(`
-    <div class="modal-h"><h3>${id?'Editar perfil':'Novo perfil'}</h3><button class="iconbtn" onclick="closeModal()">✕</button></div>
-    <div class="modal-b">
-      <div class="grid-form">
-        <div><label class="fld">Instagram</label><input id="m_ig" value="${esc(i.ig)}" placeholder="@usuario"></div>
-        <div><label class="fld">TikTok</label><input id="m_tt" value="${esc(i.tiktok)}" placeholder="@usuario"></div>
-        <div><label class="fld">Seguidores</label><input id="m_f" type="number" value="${i.followers}" placeholder="ex: 50000"></div>
-        <div><label class="fld">Engajamento (%)</label><input id="m_e" type="number" step="0.1" value="${i.engaj??''}" placeholder="opcional"></div>
-        <div><label class="fld">Geração</label><select id="m_g">
-          ${['','Gen Z','Millennials','Gen X'].map(g=>`<option ${i.gen===g?'selected':''}>${g}</option>`).join('')}
-        </select></div>
-        <div><label class="fld">Local</label><input id="m_l" value="${esc(i.loc)}" placeholder="REC, JP, RJ…"></div>
-        <div><label class="fld">Marca conectada</label><input id="m_br" list="brandlist" value="${esc(i.brand||'')}" placeholder="ex: RN"><datalist id="brandlist">${DB.brands.map(b=>`<option value="${esc(b.name)}">`).join('')}</datalist></div>
-        <div><label class="fld">WhatsApp</label><input id="m_ph" value="${esc(i.phone||'')}" placeholder="ex: 5581999998888"></div>
-        <div><label class="fld">E-mail</label><input id="m_em" value="${esc(i.email||'')}" placeholder="opcional"></div>
-        <div><label class="fld">Cachê por reel (R$)</label><input id="m_cache" type="number" value="${i.cache??''}" placeholder="valor real (opcional)"></div>
-        <div style="grid-column:1/3"><label class="fld">Nicho</label><input id="m_n" value="${esc(i.niche)}" placeholder="Moda e lifestyle"></div>
-        <div style="grid-column:1/3"><label class="fld">Notas</label><textarea id="m_nt" rows="2">${esc(i.notas)}</textarea></div>
-      </div>
-    </div>
-    <div class="modal-f">
-      <button class="btn ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn" onclick="saveInflu('${id||''}')">Salvar</button>
-    </div>`);
-}
-async function saveInflu(id){
-  const g=k=>document.getElementById(k).value;
-  const rec={ ig:g('m_ig')||'@', tiktok:g('m_tt'), followers:+g('m_f')||0, engaj:g('m_e')===''?null:+g('m_e'),
-    gen:g('m_g'), loc:g('m_l'), niche:g('m_n'), notas:g('m_nt'), status:'ativo',
-    brand:g('m_br'), phone:g('m_ph'), email:g('m_em'), cache:g('m_cache')===''?null:+g('m_cache') };
-  if(id){ rec.id=id; Object.assign(DB.influencers.find(x=>x.id===id),rec); }
-  else { rec.id=uid('i'); DB.influencers.push(rec); }
-  closeModal(); render(); await sbUpsert('influencers',rec);
-}
-
-/* ============================ MARCAS ============================ */
-let bFilter='all';
-function viewMarcas(){
-  const counts={}; Object.keys(BRAND_STATUS).forEach(s=>counts[s]=0);
-  DB.brands.forEach(b=>{ if(counts[b.status]!=null)counts[b.status]++; });
-  let list=DB.brands.filter(b=>bFilter==='all'||b.status===bFilter);
-  return `
-  <div class="toolbar">
-    <h2 class="sec" style="flex:1">Marcas · funil de contato</h2>
-    <select id="bfilter">
-      <option value="all" ${bFilter==='all'?'selected':''}>Todos os status</option>
-      ${Object.keys(BRAND_STATUS).map(s=>`<option value="${s}" ${bFilter===s?'selected':''}>${s} (${counts[s]})</option>`).join('')}
-    </select>
-    <button class="btn" onclick="openBrand()">+ Nova marca</button>
-  </div>
-  <div class="card" style="overflow:hidden"><div style="overflow-x:auto"><table>
-    <thead><tr><th>Marca</th><th>Status</th><th class="hide-sm">Contato</th><th class="hide-sm">Últ. contato</th><th>Conectados</th><th class="hide-sm">Retorno / notas</th><th></th></tr></thead>
-    <tbody>${list.length?list.map(b=>{
-      const conn=DB.influencers.filter(x=>(x.brand||'').toLowerCase()===b.name.toLowerCase());
-      return `<tr>
-      <td class="handle">${brandChip(b.name)}<div class="muted" style="font-size:11.5px;margin-top:2px">${nicheTags(b.niche).map(t=>esc(t)).join(' · ')}</div></td>
-      <td>${statusChip(b.status,BRAND_STATUS)}</td>
-      <td class="hide-sm">${b.contato||b.canal?`${esc(b.contato||'')}${b.canal?`<div class="muted" style="font-size:12px">${esc(b.canal)}</div>`:''}`:'<span class="muted">—</span>'}</td>
-      <td class="hide-sm">${b.ultimoContato?fmtDate(b.ultimoContato):'<span class="muted">—</span>'}</td>
-      <td>${conn.length?conn.map(c=>`<span class="niche-chip">${esc(c.ig)}</span>`).join(''):'<span class="muted">nenhum</span>'}</td>
-      <td class="hide-sm muted">${esc(b.notas)}</td>
-      <td><div class="rowbtns">
-        <button class="iconbtn" onclick="openBrand('${b.id}')">✎</button>
-        <button class="iconbtn" onclick="delBrand('${b.id}')">🗑</button>
-      </div></td></tr>`;}).join(''):`<tr><td colspan="7" class="empty">Nenhuma marca neste status.</td></tr>`}
-    </tbody></table></div></div>`;
-}
-function wireMarcas(){ const f=document.getElementById('bfilter'); if(f)f.onchange=e=>{bFilter=e.target.value; render();}; }
-async function delBrand(id){ if(!confirm('Remover marca?'))return; DB.brands=DB.brands.filter(b=>b.id!==id); render(); await sbDelete('brands',id); }
-function openBrand(id){
-  const b=id?DB.brands.find(x=>x.id===id):{name:'',niche:'',notas:'',contato:'',canal:'',status:'Prospect',ultimoContato:''};
-  modal(`
-    <div class="modal-h"><h3>${id?'Editar marca':'Nova marca'}</h3><button class="iconbtn" onclick="closeModal()">✕</button></div>
-    <div class="modal-b"><div class="grid-form">
-      <div><label class="fld">Nome da marca</label><input id="b_n" value="${esc(b.name)}"></div>
-      <div><label class="fld">Status</label><select id="b_st">${Object.keys(BRAND_STATUS).map(s=>`<option ${b.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
-      <div><label class="fld">Pessoa de contato</label><input id="b_ct" value="${esc(b.contato||'')}" placeholder="ex: Marina (marketing)"></div>
-      <div><label class="fld">Canal (e-mail/zap/@)</label><input id="b_cn" value="${esc(b.canal||'')}" placeholder="email ou telefone"></div>
-      <div><label class="fld">Último contato</label><input id="b_dt" type="date" value="${b.ultimoContato||''}"></div>
-      <div><label class="fld">Nicho de interesse</label><input id="b_ni" value="${esc(b.niche)}" placeholder="Beauty, Maternidade…"></div>
-      <div style="grid-column:1/3"><label class="fld">Retorno / notas</label><textarea id="b_nt" rows="2" placeholder="o que a marca respondeu, próximo passo…">${esc(b.notas)}</textarea></div>
-    </div></div>
-    <div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveBrand('${id||''}')">Salvar</button></div>`);
-}
-async function saveBrand(id){
-  const g=k=>document.getElementById(k).value;
-  const rec={name:g('b_n'),status:g('b_st'),contato:g('b_ct'),canal:g('b_cn'),ultimoContato:g('b_dt'),niche:g('b_ni'),notas:g('b_nt')};
-  if(id){rec.id=id; Object.assign(DB.brands.find(x=>x.id===id),rec);} else{rec.id=uid('b'); DB.brands.push(rec);}
-  closeModal(); render(); await sbUpsert('brands',rec);
-}
-
-/* ============================ CAMPANHAS (controle de prazos) ============================ */
-function campCost(c){ return DB.influencers.filter(i=>(c.influs||[]).includes(i.id)).reduce((a,b)=>a+postValue(b),0); }
-function viewCamp(){
-  const cs=DB.campaigns.slice();
-  const aReceber=cs.filter(c=>c.status!=='Pago').reduce((a,b)=>a+(+b.valor||0),0);
-  // agenda: próximos eventos
-  const ev=[];
-  cs.forEach(c=>{
-    if(c.entrega && c.status!=='Conteúdo entregue' && c.status!=='Pago') ev.push({t:'Entrega',iso:c.entrega,c});
-    if(c.pagamento && c.status!=='Pago') ev.push({t:'Pagamento',iso:c.pagamento,c});
-  });
-  ev.sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
-  const next=ev.slice(0,4);
-
-  const byDate=cs.sort((a,b)=>(a.entrega||'9').localeCompare(b.entrega||'9'));
-  return `
-  <div class="stat-row" style="grid-template-columns:repeat(3,1fr)">
-    <div class="card stat"><div class="k">${cs.length}</div><div class="l">Campanhas</div></div>
-    <div class="card stat"><div class="k" style="font-size:23px">${fmtMoney(aReceber)}</div><div class="l">A receber</div></div>
-    <div class="card stat"><div class="k">${next.length?fmtDate(next[0].iso):'—'}</div><div class="l">Próximo prazo</div>${next.length?`<div class="sub">${next[0].t.toLowerCase()} · ${esc(next[0].c.brand||'')}</div>`:''}</div>
-  </div>
-
-  ${next.length?`<div class="card pad" style="margin-top:14px">
-    <h2 class="sec">Agenda</h2>
-    <p class="muted" style="margin:0 0 12px;font-size:13px">Próximas entregas e pagamentos, em ordem</p>
-    ${next.map(e=>`<div class="agenda-row">
-      <span class="agenda-tag ${e.t==='Entrega'?'tg-e':'tg-p'}">${e.t}</span>
-      <span style="flex:1">${esc(e.c.titulo||'(sem título)')} · ${brandChip(e.c.brand)}</span>
-      ${dueChip(e.iso, e.t==='Entrega'?'entrega':'pagamento')}
-    </div>`).join('')}
-  </div>`:''}
-
-  <div class="toolbar" style="margin-top:16px"><h2 class="sec" style="flex:1">Campanhas</h2><button class="btn" onclick="openCamp()">+ Nova campanha</button></div>
-  <div class="card" style="overflow:hidden"><div style="overflow-x:auto"><table>
-    <thead><tr><th>Campanha</th><th>Marca</th><th class="hide-sm">Influenciadores</th><th>Valor</th><th>Entrega</th><th>Pagamento</th><th>Status</th><th></th></tr></thead>
-    <tbody>${cs.length?byDate.map(c=>{
-      const who=DB.influencers.filter(i=>(c.influs||[]).includes(i.id));
-      return `<tr>
-      <td class="handle">${esc(c.titulo||'(sem título)')}</td>
-      <td>${brandChip(c.brand)}</td>
-      <td class="hide-sm">${who.length?who.map(w=>`<span class="niche-chip">${esc(w.ig)}</span>`).join(''):'<span class="muted">—</span>'}</td>
-      <td class="num">${c.valor?fmtMoney(+c.valor):'<span class="muted">—</span>'}</td>
-      <td>${c.status==='Conteúdo entregue'||c.status==='Pago'?`<span class="muted">${fmtDate(c.entrega)} ✓</span>`:dueChip(c.entrega,'entrega')}</td>
-      <td>${c.status==='Pago'?`<span class="muted">${fmtDate(c.pagamento)} ✓</span>`:dueChip(c.pagamento,'pagamento')}</td>
-      <td>${statusChip(c.status,CAMP_STATUS)}</td>
-      <td><div class="rowbtns">
-        <button class="iconbtn" onclick="openCamp('${c.id}')">✎</button>
-        <button class="iconbtn" onclick="delCamp('${c.id}')">🗑</button>
-      </div></td></tr>${c.notas?`<tr class="obs-row"><td colspan="8"><span class="obs-tag">Obs.</span> ${esc(c.notas)}</td></tr>`:''}`;}).join(''):`<tr><td colspan="8" class="empty">Nenhuma campanha ainda. Crie a primeira com o botão acima.</td></tr>`}
-    </tbody></table></div></div>`;
-}
-async function delCamp(id){ if(!confirm('Remover campanha?'))return; DB.campaigns=DB.campaigns.filter(c=>c.id!==id); render(); await sbDelete('campaigns',id); }
-function openCamp(id){
-  const c=id?DB.campaigns.find(x=>x.id===id):{titulo:'',brand:'',influs:[],valor:'',entrega:'',pagamento:'',status:'A produzir',notas:''};
-  const sel=new Set(c.influs||[]);
-  modal(`
-    <div class="modal-h"><h3>${id?'Editar campanha':'Nova campanha'}</h3><button class="iconbtn" onclick="closeModal()">✕</button></div>
-    <div class="modal-b"><div class="grid-form">
-      <div style="grid-column:1/3"><label class="fld">Título da campanha</label><input id="k_t" value="${esc(c.titulo)}" placeholder="ex: Coleção Inverno"></div>
-      <div><label class="fld">Marca</label><input id="k_b" list="brandlist2" value="${esc(c.brand)}" placeholder="ex: RN"><datalist id="brandlist2">${DB.brands.map(b=>`<option value="${esc(b.name)}">`).join('')}</datalist></div>
-      <div><label class="fld">Status</label><select id="k_s">${Object.keys(CAMP_STATUS).map(s=>`<option ${c.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
-      <div><label class="fld">Valor (R$)</label><input id="k_v" type="number" value="${c.valor}" placeholder="ex: 4000"></div>
-      <div></div>
-      <div><label class="fld">Data de entrega</label><input id="k_e" type="date" value="${c.entrega||''}"></div>
-      <div><label class="fld">Data de pagamento</label><input id="k_p" type="date" value="${c.pagamento||''}"></div>
-      <div style="grid-column:1/3"><label class="fld">Influenciadores</label>
-        <div class="chk-grid">${DB.influencers.map(i=>`<label class="chk"><input type="checkbox" value="${i.id}" ${sel.has(i.id)?'checked':''}> ${esc(i.ig)}</label>`).join('')}</div>
-      </div>
-      <div style="grid-column:1/3"><label class="fld">Observações</label><textarea id="k_nt" rows="4" placeholder="Escreva livremente o que for importante: combinados, detalhes do briefing, pendências, o que prestar atenção…">${esc(c.notas)}</textarea></div>
-    </div></div>
-    <div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveCamp('${id||''}')">Salvar</button></div>`);
-}
-async function saveCamp(id){
-  const g=k=>document.getElementById(k).value;
-  const influs=[...document.querySelectorAll('.chk-grid input:checked')].map(x=>x.value);
-  const rec={titulo:g('k_t'),brand:g('k_b'),status:g('k_s'),valor:+g('k_v')||0,entrega:g('k_e'),pagamento:g('k_p'),influs,notas:g('k_nt')};
-  if(id){rec.id=id; Object.assign(DB.campaigns.find(x=>x.id===id),rec);} else{rec.id=uid('c'); DB.campaigns.push(rec);}
-  closeModal(); render(); await sbUpsert('campaigns',rec);
-}
-
-/* ============================ MATCH (busca de casting) ============================ */
-let mState={niche:'',tier:'all',loc:'',budget:'',selected:new Set()};
-function viewMatch(){
-  return `
-  <h2 class="sec" style="margin-bottom:14px">Match inteligente de campanha</h2>
-  <div class="match-grid">
-    <div class="card pad">
-      <label class="fld">Nicho da campanha</label>
-      <input id="c_niche" value="${esc(mState.niche)}" placeholder="ex: maternidade">
-      <label class="fld" style="margin-top:13px">Porte</label>
-      <select id="c_tier">${['all','nano','micro','macro','mega'].map(t=>`<option value="${t}" ${mState.tier===t?'selected':''}>${t==='all'?'Qualquer':t}</option>`).join('')}</select>
-      <label class="fld" style="margin-top:13px">Local</label>
-      <input id="c_loc" value="${esc(mState.loc)}" placeholder="ex: REC (opcional)">
-      <label class="fld" style="margin-top:13px">Orçamento (R$)</label>
-      <input id="c_budget" type="number" value="${mState.budget}" placeholder="opcional">
-      <p class="muted" style="font-size:12px;margin-top:14px">Marque os perfis ao lado pra montar o casting da proposta. O total é calculado na hora (1 reel por perfil).</p>
-    </div>
-    <div>${matchResults()}</div>
+  <div class="note-strip">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/></svg>
+    <span><b>Direção C:</b> avatar em monograma plano (sem gradiente), número em mono, valor calculado, ícones de linha consistentes — densidade de SaaS com respiro.</span>
   </div>`;
 }
+
+/* ---------- MARCAS ---------- */
+function renderMarcas(){
+  const counts={}; Object.keys(BRAND_STATUS).forEach(s=>counts[s]=0);
+  BRANDS.forEach(b=>{ if(counts[b.status]!=null)counts[b.status]++; });
+  document.getElementById('v-marcas').innerHTML=`
+  <div class="funnel">
+    ${Object.keys(BRAND_STATUS).map(s=>`<div class="fstage"><div class="fc num">${counts[s]}</div><div class="fl" style="--dotc:${BRAND_STATUS[s]}">${s}</div></div>`).join('')}
+  </div>
+  <div class="toolbar">
+    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Buscar marca…"></div>
+    <div class="spacer"></div>
+    <span class="count">${BRANDS.length} marcas no funil</span>
+    <button class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Nova marca</button>
+  </div>
+  <div class="card tbl-wrap"><div class="tbl-scroll"><table>
+    <thead><tr><th>Marca</th><th>Status</th><th>Contato</th><th>Últ.</th><th>Conectados</th><th>Retorno / notas</th><th></th></tr></thead>
+    <tbody>${BRANDS.map(b=>{
+      const conn=INF.filter(i=>(i.brand||'').toLowerCase()===b.name.toLowerCase());
+      return `<tr>
+        <td><div class="cell-strong">${brandTag(b.name)}</div><div class="cell-sub">${nicheTags(b.niche).map(esc).join(' · ')}</div></td>
+        <td>${statusChip(b.status,BRAND_STATUS)}</td>
+        <td>${b.contato&&b.contato!=='—'?esc(b.contato):dash}</td>
+        <td>${b.ult?`<span class="num" style="font-size:12.5px">${fmtDate(b.ult)}</span>`:dash}</td>
+        <td>${conn.length?`<div class="chip-row">${conn.map(c=>`<span class="chip">${esc(c.ig)}</span>`).join('')}</div>`:dash}</td>
+        <td style="max-width:240px; color:var(--ink-2)">${esc(b.notas)||dash}</td>
+        <td><div class="row-acts">
+          <button class="miniico" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>
+          <button class="miniico" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"/></svg></button>
+        </div></td>
+      </tr>`;}).join('')}</tbody>
+  </table></div></div>`;
+}
+
+/* ---------- CAMPANHAS ---------- */
+function renderCamp(){
+  const total=CAMPAIGNS.length;
+  const abertas=CAMPAIGNS.filter(c=>c.status!=='Pago');
+  const aReceber=abertas.reduce((a,b)=>a+b.valor,0);
+  const ev=[];
+  CAMPAIGNS.forEach(c=>{
+    const entregue=['Conteúdo entregue','Aguardando pagamento','Pago'].includes(c.status);
+    if(c.entrega&&!entregue) ev.push({kind:'Entrega',cls:'e',iso:c.entrega,c});
+    if(c.pag&&c.status!=='Pago') ev.push({kind:'Pagamento',cls:'p',iso:c.pag,c});
+  });
+  ev.sort((a,b)=>a.iso.localeCompare(b.iso));
+  const next=ev.slice(0,4);
+  const stOf=d=>d<0?'late':d<=3?'soon':'';
+  const whenT=d=>d<0?`${-d}d atrás`:d===0?'hoje':`em ${d}d`;
+  document.getElementById('v-camp').innerHTML=`
+  <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="card kpi">
+      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l14-6v14L3 13z"/><path d="M17 7a3 3 0 0 1 0 6"/></svg>Campanhas</div>
+      <div class="val num">${total}</div>
+      <div class="meta"><span class="delta flat">${abertas.length} em aberto</span></div>
+    </div>
+    <div class="card kpi">
+      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>A receber</div>
+      <div class="val num">${fmtMoney(aReceber).replace('R$ ','R$')}</div>
+      <div class="meta"><span class="delta warn">a faturar</span></div>
+    </div>
+    <div class="card kpi">
+      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Próximo prazo</div>
+      <div class="val num">${next.length?fmtDate(next[0].iso):'—'}</div>
+      <div class="meta"><span class="note">${next.length?next[0].kind.toLowerCase()+' · '+esc(next[0].c.brand):''}</span></div>
+    </div>
+  </div>
+  ${next.length?`<div class="card pad" style="margin-top:14px">
+    <div class="ctitle"><h3>Agenda</h3><span class="count" style="font-family:var(--mono)">${ev.length} prazos</span></div>
+    <div class="tl">${next.map(e=>{const d=daysUntil(e.iso);const st=stOf(d);return `<div class="tl-row ${st}"><div class="tl-top"><span class="tl-kind ${e.cls}">${e.kind}</span><span class="tl-when ${st}">${whenT(d)}</span></div><div class="tl-desc"><b>${esc(e.c.titulo)}</b> · ${brandTag(e.c.brand)}</div></div>`;}).join('')}</div>
+  </div>`:''}
+  <div class="ctitle" style="margin:20px 0 12px"><h3 style="font-size:15px">Todas as campanhas</h3><button class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Nova campanha</button></div>
+  <div class="card tbl-wrap"><div class="tbl-scroll"><table>
+    <thead><tr><th>Campanha</th><th>Marca</th><th>Influenciadores</th><th>Valor</th><th>Entrega</th><th>Pagamento</th><th>Status</th><th></th></tr></thead>
+    <tbody>${CAMPAIGNS.map(c=>{
+      const entregue=['Conteúdo entregue','Aguardando pagamento','Pago'].includes(c.status);
+      return `<tr>
+        <td><div class="cell-strong">${esc(c.titulo)}</div>${c.notas?`<div class="cell-sub">${esc(c.notas)}</div>`:''}</td>
+        <td>${brandTag(c.brand)}</td>
+        <td><div class="chip-row">${c.influs.map(h=>`<span class="chip">${esc(h)}</span>`).join('')}</div></td>
+        <td class="num" style="font-weight:600">${fmtMoney(c.valor)}</td>
+        <td>${dueCell(c.entrega,entregue)}</td>
+        <td>${dueCell(c.pag,c.status==='Pago')}</td>
+        <td>${statusChip(c.status,CAMP_STATUS)}</td>
+        <td><div class="row-acts">
+          <button class="miniico" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>
+          <button class="miniico" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"/></svg></button>
+        </div></td>
+      </tr>`;}).join('')}</tbody>
+  </table></div></div>`;
+}
+
+/* ---------- MATCH ---------- */
+let mState={niche:'',tier:'all',loc:'',budget:'',sel:new Set(['@claracvd','@cucaamorim'])};
 function matchResults(){
-  let list=DB.influencers.filter(i=>{
+  let list=INF.filter(i=>{
     const nN=!mState.niche||nicheTags(i.niche).some(t=>t.toLowerCase().includes(mState.niche.toLowerCase()));
-    const tN=mState.tier==='all'||tierOf(+i.followers)[0]===mState.tier;
-    const lN=!mState.loc||(''+i.loc).toLowerCase().includes(mState.loc.toLowerCase());
+    const tN=mState.tier==='all'||tierOf(i.followers)[0]===mState.tier;
+    const lN=!mState.loc||(''+i.loc).toLowerCase().includes(mState.loc.toLowerCase())||(LOCS[i.loc]||'').toLowerCase().includes(mState.loc.toLowerCase());
     return nN&&tN&&lN;
   }).sort((a,b)=>b.followers-a.followers);
-
-  const sel=DB.influencers.filter(i=>mState.selected.has(i.id));
-  const totReach=sel.reduce((a,b)=>a+(+b.followers),0);
+  const sel=INF.filter(i=>mState.sel.has(i.ig));
+  const totReach=sel.reduce((a,b)=>a+b.followers,0);
   const totCost=sel.reduce((a,b)=>a+postValue(b),0);
   const over=mState.budget&&totCost>+mState.budget;
-
   return `
-  ${sel.length?`<div class="pill-stat">
-    <div><div class="k">${sel.length}</div><div class="l">no casting</div></div>
-    <div><div class="k">${fmtN(totReach)}</div><div class="l">alcance</div></div>
-    <div><div class="k" style="${over?'color:var(--coral-deep)':''}">${fmtMoney(totCost)}</div><div class="l">custo est.${over?' · acima do orçamento':''}</div></div>
+  ${sel.length?`<div class="summary">
+    <div><div class="sv">${sel.length}</div><div class="sl">no casting</div></div>
+    <div><div class="sv">${fmtN(totReach)}</div><div class="sl">alcance</div></div>
+    <div><div class="sv" style="${over?'color:var(--danger)':''}">${fmtMoney(totCost)}</div><div class="sl">custo est.${over?' · acima do orçamento':''}</div></div>
   </div>`:''}
-  ${list.length?list.map(i=>{
-    const[t,cl]=tierOf(+i.followers); const on=mState.selected.has(i.id);
-    return `<div class="roster-card" style="${on?'border-color:var(--coral);background:var(--coral-soft)':''}">
-      <div class="av">${esc(i.ig.replace('@','')[0]||'?').toUpperCase()}</div>
-      <div style="flex:1;min-width:0">
-        <div class="handle">${esc(i.ig)} <span class="tier ${cl}">${t}</span></div>
-        <div class="muted" style="font-size:12.5px">${fmtN(+i.followers)} seg · ${esc(i.niche)||'—'} · ${esc(i.loc)||'—'}</div>
-      </div>
-      <div style="text-align:right">
-        <div class="num">${fmtMoney(postValue(i))}</div>
-        <button class="link" onclick="toggleSel('${i.id}')">${on?'remover':'+ casting'}</button>
-      </div>
-    </div>`;
-  }).join(''):`<div class="card empty">Nenhum perfil bate com esses filtros.</div>`}`;
+  <div class="roster">${list.length?list.map(i=>{
+    const[t,cl]=tierOf(i.followers); const on=mState.sel.has(i.ig);
+    return `<div class="rcard ${on?'sel':''}">
+      ${avatar(i.ig,i.followers)}
+      <div class="rid"><div class="rh">${esc(i.ig)} <span class="tier ${cl}">${t}</span></div><div class="rm">${fmtN(i.followers)} seg · ${esc(i.niche)||'—'} · ${LOCS[i.loc]||i.loc||'—'}</div></div>
+      <div class="rv"><div class="rval">${fmtMoney(postValue(i))}</div><button class="addbtn" onclick="toggleSel('${i.ig}')">${on?'remover':'+ casting'}</button></div>
+    </div>`;}).join(''):`<div class="card pad" style="text-align:center; color:var(--muted)">Nenhum perfil bate com esses filtros.</div>`}</div>`;
 }
-function toggleSel(id){ mState.selected.has(id)?mState.selected.delete(id):mState.selected.add(id); document.querySelector('.match-grid > div:last-child').innerHTML=matchResults(); }
+function toggleSel(ig){ mState.sel.has(ig)?mState.sel.delete(ig):mState.sel.add(ig); document.getElementById('matchResults').innerHTML=matchResults(); }
+function renderMatch(){
+  document.getElementById('v-match').innerHTML=`
+  <div class="match">
+    <div class="card pad">
+      <div class="ctitle"><h3>Filtros da campanha</h3></div>
+      <div class="ffield"><label>Nicho</label><input id="m_niche" placeholder="ex: maternidade"></div>
+      <div class="ffield"><label>Porte</label><select id="m_tier"><option value="all">Qualquer</option><option value="nano">Nano</option><option value="micro">Micro</option><option value="macro">Macro</option><option value="mega">Mega</option></select></div>
+      <div class="ffield"><label>Local</label><input id="m_loc" placeholder="ex: Recife (opcional)"></div>
+      <div class="ffield"><label>Orçamento (R$)</label><input id="m_budget" type="number" placeholder="opcional"></div>
+      <div class="note-strip" style="margin:4px 0 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/></svg><span>Marque perfis pra montar o casting — alcance e custo somam na hora.</span></div>
+    </div>
+    <div id="matchResults">${matchResults()}</div>
+  </div>`;
+  wireMatch();
+}
 function wireMatch(){
-  const map={c_niche:'niche',c_loc:'loc',c_budget:'budget'};
-  Object.entries(map).forEach(([id,k])=>{
-    const el=document.getElementById(id);
-    el.oninput=()=>{mState[k]=el.value; const p=el.selectionStart; document.querySelector('.match-grid > div:last-child').innerHTML=matchResults();};
-  });
-  document.getElementById('c_tier').onchange=e=>{mState.tier=e.target.value; document.querySelector('.match-grid > div:last-child').innerHTML=matchResults();};
+  const map={m_niche:'niche',m_loc:'loc',m_budget:'budget'};
+  Object.entries(map).forEach(([id,k])=>{const el=document.getElementById(id); if(el)el.oninput=()=>{mState[k]=el.value; document.getElementById('matchResults').innerHTML=matchResults();};});
+  const ts=document.getElementById('m_tier'); if(ts)ts.onchange=()=>{mState.tier=ts.value; document.getElementById('matchResults').innerHTML=matchResults();};
 }
 
-/* ============================ modal infra ============================ */
-function modal(html){ document.getElementById('modal').innerHTML=html; document.getElementById('scrim').classList.add('on'); }
-function closeModal(){ document.getElementById('scrim').classList.remove('on'); }
-document.getElementById('scrim').addEventListener('click',e=>{ if(e.target.id==='scrim')closeModal(); });
+/* ---------- tema (persistido) ---------- */
+const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>';
+const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.3 5.3 6.7 6.7M17.3 17.3l1.4 1.4M18.7 5.3 17.3 6.7M6.7 17.3 5.3 18.7"/></svg>';
+function toggleDark(){const d=document.body.classList.toggle('dark'); try{localStorage.setItem('ph_dark',d?'1':'0')}catch(e){} const b=document.getElementById('darkBtn'); if(b)b.innerHTML=d?SUN:MOON;}
+function applyDark(){let d=false; try{d=localStorage.getItem('ph_dark')==='1'}catch(e){} document.body.classList.toggle('dark',d); const b=document.getElementById('darkBtn'); if(b)b.innerHTML=d?SUN:MOON;}
+function showGatePanel(which){ const g=document.getElementById('gate'); g.style.display='flex'; document.getElementById('g-in').style.display=which==='ob'?'none':''; document.getElementById('g-ob').style.display=which==='ob'?'':'none'; }
+function hideGate(){document.getElementById('gate').style.display='none';}
 
-/* ============================ contato rápido ============================ */
-function contactMenu(id,ev){
-  ev.stopPropagation(); closePop();
-  const i=DB.influencers.find(x=>x.id===id); if(!i)return;
-  const user=i.ig.replace('@','');
-  const rows=[`<div class="hd">${esc(i.ig)}</div>`];
-  rows.push(`<a href="https://ig.me/m/${encodeURIComponent(user)}" target="_blank" rel="noopener">💬 Direct (Instagram)</a>`);
-  if(i.phone) rows.push(`<a href="https://wa.me/${i.phone.replace(/\D/g,'')}" target="_blank" rel="noopener">🟢 WhatsApp</a>`);
-  if(i.email) rows.push(`<a href="mailto:${esc(i.email)}">✉ E-mail</a>`);
-  rows.push(`<a href="https://instagram.com/${encodeURIComponent(user)}" target="_blank" rel="noopener">↗ Abrir perfil</a>`);
-  if(i.tiktok) rows.push(`<a href="https://www.tiktok.com/@${encodeURIComponent(i.tiktok.replace('@',''))}" target="_blank" rel="noopener">🎵 TikTok</a>`);
-  rows.push(`<button onclick="if(navigator.clipboard)navigator.clipboard.writeText('${i.ig}');this.textContent='@ copiado ✓'">⧉ Copiar @</button>`);
-  if(!i.phone&&!i.email) rows.push(`<div class="pop-hint">Adicione WhatsApp/e-mail no perfil pra liberar mais canais</div>`);
-  const pop=document.createElement('div'); pop.className='pop'; pop.id='pop'; pop.innerHTML=rows.join('');
-  document.body.appendChild(pop);
-  const r=ev.currentTarget.getBoundingClientRect();
-  let top=r.bottom+6, left=r.left;
-  if(left+pop.offsetWidth>innerWidth-10) left=innerWidth-pop.offsetWidth-10;
-  if(top+pop.offsetHeight>innerHeight-10) top=r.top-pop.offsetHeight-6;
-  pop.style.top=Math.max(8,top)+'px'; pop.style.left=Math.max(8,left)+'px';
+/* ---------- modal + toast (próprios, no lugar de alert/confirm) ---------- */
+const XICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+function openModal(html){document.getElementById('modal2').innerHTML=html; document.getElementById('scrim').classList.add('on');}
+function closeModal(){document.getElementById('scrim').classList.remove('on');}
+document.getElementById('scrim').addEventListener('click',e=>{if(e.target.id==='scrim')closeModal();});
+function confirmModal(o){
+  openModal(`<div class="m-h"><h3>${esc(o.title)}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
+  <div class="m-b" style="color:var(--ink-2);line-height:1.55">${o.body||''}</div>
+  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn danger" id="cfmBtn">${esc(o.confirmLabel||'Remover')}</button></div>`);
+  document.getElementById('cfmBtn').onclick=()=>{closeModal(); o.onConfirm&&o.onConfirm();};
 }
-function closePop(){ const p=document.getElementById('pop'); if(p)p.remove(); }
-document.addEventListener('click',e=>{ if(!e.target.closest('#pop')&&!e.target.closest('.contact-btn'))closePop(); });
-window.addEventListener('scroll',closePop,true);
+function modalForm(title){
+  return `<div class="m-h"><h3>${esc(title)}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
+  <div class="m-b"><div class="grid2">
+    <div class="field"><label>Instagram</label><input placeholder="@usuario"></div>
+    <div class="field"><label>Seguidores</label><input type="number" placeholder="ex: 50000"></div>
+    <div class="field"><label>Local</label><input placeholder="Recife"></div>
+    <div class="field"><label>Geração</label><select><option>Gen Z</option><option>Millennials</option><option>Gen X</option></select></div>
+    <div class="field" style="grid-column:1/3"><label>Nicho</label><input placeholder="Moda e lifestyle"></div>
+  </div></div>
+  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="closeModal();toast('Salvo com sucesso','ok')">Salvar</button></div>`;
+}
+function toastIcon(type){
+  if(type==='warn')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>';
+  if(type==='info')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>';
+}
+function toast(msg,type){
+  const c=document.getElementById('toasts'); const el=document.createElement('div');
+  el.className='toast '+(type||''); el.innerHTML=toastIcon(type)+'<span>'+esc(msg)+'</span>'; c.appendChild(el);
+  setTimeout(()=>{el.style.transition='opacity .3s,transform .3s'; el.style.opacity='0'; el.style.transform='translateX(14px)'; setTimeout(()=>el.remove(),300);},2600);
+}
+/* ===== ações reais via delegação (sem tocar nos renders) ===== */
+function currentView(){ const a=document.querySelector('.navitem.active'); return a?a.dataset.go:'painel'; }
+function infByHandle(h){ return INF.find(i=>i.ig===h); }
+document.addEventListener('click',e=>{
+  const ct=e.target.closest('.contact');
+  if(ct){ const card=ct.closest('.inf'); const h=card&&card.querySelector('.inf-h a')?card.querySelector('.inf-h a').textContent.trim():null; const i=h&&infByHandle(h); if(i) openContact(i); return; }
+  const mi=e.target.closest('.miniico');
+  if(mi){ const t=mi.getAttribute('title'); const card=mi.closest('.inf');
+    if(card){ const a=card.querySelector('.inf-h a'); const i=a&&infByHandle(a.textContent.trim()); if(!i)return;
+      if(t==='Remover') confirmModal({title:'Remover influenciador?',body:`<b>${esc(i.ig)}</b> sairá da carteira.`,onConfirm:()=>delInf(i)}); else openInfForm(i); return; }
+    const tr=mi.closest('tr');
+    if(tr){ const v=currentView(); const key=tr.querySelector('.cell-strong')?tr.querySelector('.cell-strong').textContent.trim():'';
+      if(v==='marcas'){ const b=BRANDS.find(x=>x.name===key); if(!b)return; if(t==='Remover') confirmModal({title:'Remover marca?',body:`<b>${esc(b.name)}</b> sairá do funil.`,onConfirm:()=>delBrand(b)}); else openBrandForm(b); }
+      else if(v==='camp'){ const c=CAMPAIGNS.find(x=>x.titulo===key); if(!c)return; if(t==='Remover') confirmModal({title:'Remover campanha?',body:`<b>${esc(c.titulo)}</b> será removida.`,onConfirm:()=>delCamp(c)}); else openCampForm(c); }
+      return; }
+  }
+  const nb=e.target.closest('.btn');
+  if(nb && /Nov[ao]/.test(nb.textContent)){
+    const txt=nb.textContent;
+    if(/perfil|influ/i.test(txt)) openInfForm();
+    else if(/marca/i.test(txt)) openBrandForm();
+    else if(/campanha/i.test(txt)) openCampForm();
+    else { const v=currentView(); v==='marcas'?openBrandForm():v==='camp'?openCampForm():openInfForm(); }
+  }
+});
 
-/* ============================ export ============================ */
-function exportCsv(){
-  const head=['instagram','tiktok','seguidores','porte','geracao','local','nicho','engajamento','reel_estimado'];
-  const lines=DB.influencers.map(i=>[i.ig,i.tiktok,i.followers,tierOf(+i.followers)[0],i.gen,i.loc,i.niche,i.engaj??'',Math.round(postValue(i))]
-    .map(c=>`"${(''+c).replace(/"/g,'""')}"`).join(','));
-  const blob=new Blob(['\ufeff'+[head.join(','),...lines].join('\n')],{type:'text/csv'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='casting_assessoria.csv'; a.click();
+/* ===== Supabase (multi-agência, isolado por workspace) ===== */
+const BUILTIN_URL='https://efskrnrpqgtgkaiulrpb.supabase.co';
+const BUILTIN_KEY='sb_publishable_BHuFybhaK0yANvm_NcOEJw_3vAsmnAI';
+let SB=null, USER=null, WS=null;
+function sbClient(){ if(!SB) SB=supabase.createClient(BUILTIN_URL,BUILTIN_KEY); return SB; }
+function val(id){const e=document.getElementById(id);return e?e.value:'';}
+function setText(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
+function setMsg(id,txt,err){const e=document.getElementById(id);if(e){e.textContent=txt||'';e.classList.toggle('err',!!err);}}
+
+async function doSignup(){ const email=val('au-email').trim(),pass=val('au-pass'); if(!email||pass.length<6)return setMsg('au-msg','Informe e-mail e senha (mín. 6).',true); setMsg('au-msg','Criando conta…'); const {data,error}=await sbClient().auth.signUp({email,password:pass}); if(error)return setMsg('au-msg',error.message,true); if(data.session){USER=data.user;afterAuth();} else setMsg('au-msg','Conta criada! Agora toque em Entrar.'); }
+async function doLogin(){ const email=val('au-email').trim(),pass=val('au-pass'); if(!email||!pass)return setMsg('au-msg','Informe e-mail e senha.',true); setMsg('au-msg','Entrando…'); const {data,error}=await sbClient().auth.signInWithPassword({email,password:pass}); if(error)return setMsg('au-msg',error.message,true); USER=data.user; afterAuth(); }
+async function logout(){ try{await sbClient().auth.signOut();}catch(e){} location.reload(); }
+async function afterAuth(){ const {data:mem}=await sbClient().from('members').select('workspace_id').limit(1); if(mem&&mem.length){ WS=mem[0].workspace_id; await afterLogin(); } else { showGatePanel('ob'); setMsg('au-msg',''); } }
+async function doCreateWs(){ const name=val('ws-name').trim(); if(!name)return setMsg('ob-msg','Dê um nome à agência.',true); setMsg('ob-msg','Criando…'); const {data,error}=await sbClient().rpc('create_workspace',{p_name:name}); if(error)return setMsg('ob-msg',error.message,true); WS=data; await afterLogin(); }
+async function doJoinWs(){ const code=val('ws-code').trim(); if(!code)return setMsg('ob-msg','Cole o código de convite.',true); setMsg('ob-msg','Entrando…'); const {data,error}=await sbClient().rpc('join_workspace',{p_code:code}); if(error)return setMsg('ob-msg',error.message,true); if(!data)return setMsg('ob-msg','Código não encontrado.',true); WS=data; await afterLogin(); }
+
+async function afterLogin(){ hideGate(); const em=(USER&&USER.email)||''; setText('navEmail',em); setText('navName',em.split('@')[0]||'Conta'); setText('navAva',(em[0]||'·').toUpperCase()); await sbLoadAll(); renderAll(); }
+
+function handleOf(h){ if(typeof h==='string'&&h.startsWith('@'))return h; const i=INF.find(x=>x.id===h); return i?i.ig:h; }
+const norm={
+  inf:d=>({id:d.id,ig:d.ig||'',followers:+d.followers||0,gen:d.gen||'',loc:d.loc||'',niche:d.niche||'',brand:d.brand||'',tiktok:d.tiktok||'',phone:d.phone||'',email:d.email||'',cache:d.cache||'',notas:d.notas||''}),
+  brand:d=>({id:d.id,name:d.name||'',status:d.status||'Prospect',niche:d.niche||'',contato:d.contato||'',ult:d.ult||d.ultimoContato||'',notas:d.notas||''}),
+  camp:d=>({id:d.id,titulo:d.titulo||'',brand:d.brand||'',influs:Array.isArray(d.influs)?d.influs.map(handleOf):[],valor:+d.valor||0,entrega:d.entrega||'',pag:d.pag||d.pagamento||'',status:d.status||'A produzir',notas:d.notas||''})
+};
+async function sbLoadAll(){ const c=sbClient();
+  const [inf,br,ca,st]=await Promise.all([
+    c.from('influencers').select('id,data').eq('workspace_id',WS),
+    c.from('brands').select('id,data').eq('workspace_id',WS),
+    c.from('campaigns').select('id,data').eq('workspace_id',WS),
+    c.from('settings').select('key,data').eq('workspace_id',WS)]);
+  INF=(inf.data||[]).map(r=>norm.inf(Object.assign({id:r.id},r.data)));
+  BRANDS=(br.data||[]).map(r=>norm.brand(Object.assign({id:r.id},r.data)));
+  CAMPAIGNS=(ca.data||[]).map(r=>norm.camp(Object.assign({id:r.id},r.data)));
+  const rt=(st.data||[]).find(x=>x.key==='rates'); if(rt&&rt.data){RATE_REEL=+rt.data.reel||50;RATE_STORY=+rt.data.story||20;}
+}
+async function sbUpsert(table,rec){ const o=Object.assign({},rec); const id=String(o.id); delete o.id; await sbClient().from(table).upsert({id,workspace_id:WS,data:o}); }
+async function sbDelete(table,id){ await sbClient().from(table).delete().eq('id',String(id)).eq('workspace_id',WS); }
+async function reloadRender(){ await sbLoadAll(); renderAll(); }
+function renderAll(){ renderPainel(); renderInflu(); renderMarcas(); renderCamp(); renderMatch(); renderDS(); updateBadges(); }
+function updateBadges(){ const map={influ:INF.length,marcas:BRANDS.length,camp:CAMPAIGNS.length}; document.querySelectorAll('.navitem').forEach(n=>{const bd=n.querySelector('.badge'); if(bd&&map[n.dataset.go]!=null)bd.textContent=map[n.dataset.go];}); }
+
+async function loadExample(){ if(!confirm('Carregar 20 perfis + marcas e campanhas de exemplo nesta agência?'))return; for(const i of SEED_INF())await sbUpsert('influencers',i); for(const b of SEED_BRANDS)await sbUpsert('brands',b); for(const c of SEED_CAMPS)await sbUpsert('campaigns',c); await reloadRender(); toast('Exemplo carregado','ok'); }
+
+/* ----- formulários ----- */
+const GENS=['','Gen Z','Millennials','Gen X'];
+function field(label,id,v,ph,type){return `<div class="field"><label>${label}</label><input id="${id}" ${type?`type="${type}"`:''} value="${esc(''+(v==null?'':v))}" placeholder="${ph||''}"></div>`;}
+function selField(label,id,opts,cur){return `<div class="field"><label>${label}</label><select id="${id}">${opts.map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;}
+function areaField(label,id,v){return `<div class="field" style="grid-column:1/3"><label>${label}</label><textarea id="${id}" rows="2">${esc(v||'')}</textarea></div>`;}
+
+function openInfForm(i){ i=i||{}; openModal(`<div class="m-h"><h3>${i.id?'Editar influenciador':'Novo influenciador'}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
+  <div class="m-b"><div class="grid2">
+    ${field('Instagram','f_ig',i.ig,'@usuario')}${field('Seguidores','f_foll',i.followers,'ex: 50000','number')}
+    ${field('TikTok','f_tt',i.tiktok,'@usuario')}${field('WhatsApp / telefone','f_ph',i.phone,'ex: 5581988887777')}
+    ${field('Cidade','f_loc',i.loc,'Recife')}${selField('Geração','f_gen',GENS,i.gen||'')}
+    ${field('E-mail','f_email',i.email,'contato@email.com','email')}${field('Cachê R$ (opcional)','f_cache',i.cache,'sobrescreve estimativa','number')}
+    ${field('Marca conectada','f_brand',i.brand,'opcional')}${field('Nicho','f_niche',i.niche,'Moda e lifestyle')}
+    ${areaField('Observações','f_notas',i.notas)}
+  </div></div>
+  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" id="saveBtn">Salvar</button></div>`);
+  document.getElementById('saveBtn').onclick=async()=>{ let ig=val('f_ig').trim(); if(ig&&!ig.startsWith('@'))ig='@'+ig; if(!ig)return toast('Informe o Instagram','warn');
+    const rec={id:i.id||('i'+Date.now()),ig,followers:+val('f_foll')||0,tiktok:val('f_tt').trim(),phone:val('f_ph').trim(),loc:val('f_loc').trim(),gen:val('f_gen'),email:val('f_email').trim(),cache:val('f_cache').trim(),brand:val('f_brand').trim(),niche:val('f_niche').trim(),notas:val('f_notas').trim()};
+    closeModal(); await sbUpsert('influencers',rec); await reloadRender(); toast('Perfil salvo','ok'); };
+}
+function delInf(i){ sbDelete('influencers',i.id).then(reloadRender).then(()=>toast('Influenciador removido','ok')); }
+
+function openBrandForm(b){ b=b||{}; openModal(`<div class="m-h"><h3>${b.id?'Editar marca':'Nova marca'}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
+  <div class="m-b"><div class="grid2">
+    ${field('Marca','f_name',b.name,'Nome da marca')}${selField('Status','f_status',Object.keys(BRAND_STATUS),b.status||'Prospect')}
+    ${field('Contato','f_contato',b.contato,'Nome / cargo')}${field('Último contato','f_ult',b.ult,'','date')}
+    ${field('Nicho','f_bniche',b.niche,'Moda, Beauty')}
+    ${areaField('Retorno / notas','f_bnotas',b.notas)}
+  </div></div>
+  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" id="saveBtn">Salvar</button></div>`);
+  document.getElementById('saveBtn').onclick=async()=>{ const name=val('f_name').trim(); if(!name)return toast('Informe o nome da marca','warn');
+    const rec={id:b.id||('b'+Date.now()),name,status:val('f_status'),contato:val('f_contato').trim(),ult:val('f_ult'),niche:val('f_bniche').trim(),notas:val('f_bnotas').trim()};
+    closeModal(); await sbUpsert('brands',rec); await reloadRender(); toast('Marca salva','ok'); };
+}
+function delBrand(b){ sbDelete('brands',b.id).then(reloadRender).then(()=>toast('Marca removida','ok')); }
+
+function openCampForm(c){ c=c||{}; const sel=new Set(c.influs||[]);
+  const roster=INF.slice().sort((a,b)=>b.followers-a.followers).map(i=>`<label class="rcard" style="cursor:pointer"><input type="checkbox" value="${esc(i.ig)}" ${sel.has(i.ig)?'checked':''} style="width:auto"><div class="rid"><div class="rh">${esc(i.ig)}</div><div class="rm">${fmtN(i.followers)} seg · ${esc(i.niche)||'—'}</div></div></label>`).join('');
+  openModal(`<div class="m-h"><h3>${c.id?'Editar campanha':'Nova campanha'}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
+  <div class="m-b"><div class="grid2">
+    ${field('Título','f_tit',c.titulo,'Ex: Coleção Inverno')}${field('Marca','f_cbrand',c.brand,'Nome da marca')}
+    ${field('Valor R$','f_valor',c.valor,'ex: 4000','number')}${selField('Status','f_cstatus',Object.keys(CAMP_STATUS),c.status||'A produzir')}
+    ${field('Entrega','f_entrega',c.entrega,'','date')}${field('Pagamento','f_pag',c.pag,'','date')}
+    ${areaField('Observações','f_cnotas',c.notas)}
+    <div class="field" style="grid-column:1/3"><label>Influenciadores no casting</label><div class="roster" style="max-height:210px;overflow:auto">${roster||'<span class="muted">Cadastre influenciadores primeiro.</span>'}</div></div>
+  </div></div>
+  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" id="saveBtn">Salvar</button></div>`);
+  document.getElementById('saveBtn').onclick=async()=>{ const titulo=val('f_tit').trim(); if(!titulo)return toast('Informe o título','warn');
+    const influs=[].slice.call(document.querySelectorAll('#modal2 .roster input:checked')).map(x=>x.value);
+    const rec={id:c.id||('c'+Date.now()),titulo,brand:val('f_cbrand').trim(),valor:+val('f_valor')||0,status:val('f_cstatus'),entrega:val('f_entrega'),pag:val('f_pag'),notas:val('f_cnotas').trim(),influs};
+    closeModal(); await sbUpsert('campaigns',rec); await reloadRender(); toast('Campanha salva','ok'); };
+}
+function delCamp(c){ sbDelete('campaigns',c.id).then(reloadRender).then(()=>toast('Campanha removida','ok')); }
+
+function openContact(i){ const wa=(i.phone||'').replace(/\D/g,''); const items=[`<a href="https://instagram.com/${i.ig.replace('@','')}" target="_blank" rel="noopener">Instagram</a>`];
+  if(wa)items.push(`<a href="https://wa.me/${wa}" target="_blank" rel="noopener">WhatsApp</a>`);
+  if(i.tiktok)items.push(`<a href="https://tiktok.com/@${i.tiktok.replace('@','')}" target="_blank" rel="noopener">TikTok</a>`);
+  if(i.email)items.push(`<a href="mailto:${i.email}">E-mail</a>`);
+  openModal(`<div class="m-h"><h3>Contato · ${esc(i.ig)}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div><div class="m-b"><div class="ds-stack" style="font-weight:600">${items.map(h=>`<div>${h}</div>`).join('')}</div></div>`);
 }
 
-function applyTheme(){ let d=false; try{ d=localStorage.getItem('ph_theme')==='dark'; }catch(e){} document.body.classList.toggle('dark',d); const b=document.getElementById('themeBtn'); if(b)b.textContent=d?'Claro':'Escuro'; }
-function toggleTheme(){ const d=!document.body.classList.contains('dark'); try{ localStorage.setItem('ph_theme',d?'dark':'light'); }catch(e){} applyTheme(); }
-applyTheme();
+function persistAccent(i){try{localStorage.setItem('ph_accent',i)}catch(e){}}
+function loadAccent(){let i=3;try{const v=localStorage.getItem('ph_accent');if(v!=null)i=+v;}catch(e){}return i;}
+
+async function boot(){ applyDark(); if(typeof supabase==='undefined'){document.getElementById('gate').style.display='flex';setMsg('au-msg','Falha ao carregar Supabase. Recarregue a página.',true);return;} const c=sbClient(); const {data:{session}}=await c.auth.getSession(); if(session){USER=session.user; await afterAuth();} else { showGatePanel('in'); } }
+
+/* ---------- COMPONENTES ---------- */
+function renderDS(){
+  const plus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>';
+  const mail='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>';
+  const avs=[['@N',5000],['@M',30000],['@C',150000],['@G',1500000]].map(a=>avatar(a[0],a[1])).join('');
+  document.getElementById('v-ds').innerHTML=`
+  <p class="ds-lead">Referência viva dos componentes da Direção C — tudo herda os mesmos tokens, então segue o <b>acento</b> e o <b>dark mode</b> automaticamente. <b>Clique pra testar</b> botões, modais e toasts.</p>
+  <div class="ds-grid">
+    <div class="ds-card"><h4>Tipografia</h4>
+      <div class="type-spec"><span class="tn">Display</span><span style="font-size:23px;font-weight:600;letter-spacing:-.02em">Gestão de talentos</span></div>
+      <div class="type-spec"><span class="tn">Título</span><span style="font-size:16px;font-weight:700">Coleção Inverno</span></div>
+      <div class="type-spec"><span class="tn">Corpo</span><span style="font-size:14px">Texto de interface padrão</span></div>
+      <div class="type-spec"><span class="tn">Número</span><span class="num" style="font-size:21px;font-weight:600">R$ 68.650</span></div>
+      <div class="type-spec"><span class="tn">Micro</span><span style="font-size:11.5px;color:var(--muted)">legenda · metadado</span></div>
+    </div>
+    <div class="ds-card"><h4>Botões</h4>
+      <div class="ds-row"><button class="btn">${plus}Primário</button><button class="btn ghost">Secundário</button></div>
+      <div class="ds-row"><button class="btn danger">Perigo</button><button class="contact">${mail}Contato</button><button class="addbtn">+ casting</button></div>
+      <div class="ds-row"><span class="link">link de ação →</span></div>
+    </div>
+    <div class="ds-card"><h4>Campos</h4>
+      <div class="ds-stack">
+        <div class="field" style="margin:0"><label>Rótulo</label><input placeholder="Digite aqui…"></div>
+        <div class="field" style="margin:0"><label>Seleção</label><select><option>Opção A</option><option>Opção B</option></select></div>
+      </div>
+    </div>
+    <div class="ds-card"><h4>Porte · avatar</h4>
+      <div class="ds-row"><span class="tier t-nano">nano</span><span class="tier t-micro">micro</span><span class="tier t-macro">macro</span><span class="tier t-mega">mega</span></div>
+      <div class="ds-row" style="margin-top:14px">${avs}</div>
+    </div>
+    <div class="ds-card"><h4>Status · marcas</h4>
+      <div class="ds-row">${Object.keys(BRAND_STATUS).map(s=>statusChip(s,BRAND_STATUS)).join('')}</div>
+    </div>
+    <div class="ds-card"><h4>Status · campanhas + chips</h4>
+      <div class="ds-row">${Object.keys(CAMP_STATUS).map(s=>statusChip(s,CAMP_STATUS)).join('')}</div>
+      <div class="ds-row" style="margin-top:12px"><span class="chip">lifestyle</span><span class="chip">beauty</span>${brandTag('RN')}${brandTag('Café Norte')}</div>
+    </div>
+    <div class="ds-card"><h4>Prazos</h4>
+      <div class="ds-stack">
+        <div class="ds-row"><span class="due ok">10/06 · em 10d</span><span class="ds-note">no prazo</span></div>
+        <div class="ds-row"><span class="due soon">04/06 · em 3d</span><span class="ds-note">próximo</span></div>
+        <div class="ds-row"><span class="due late">28/05 · atrasado</span><span class="ds-note">atrasado</span></div>
+      </div>
+    </div>
+    <div class="ds-card"><h4>Feedback · toasts & modais</h4>
+      <div class="ds-row">
+        <button class="btn ghost" onclick="toast('Salvo com sucesso','ok')">Sucesso</button>
+        <button class="btn ghost" onclick="toast('Pagamento em 3 dias','warn')">Aviso</button>
+        <button class="btn ghost" onclick="toast('Casting sincronizado','info')">Info</button>
+      </div>
+      <div class="ds-row" style="margin-top:11px">
+        <button class="btn" onclick="confirmModal({title:'Remover registro?',body:'Essa ação não pode ser desfeita.',onConfirm:()=>toast('Registro removido','ok')})">Abrir modal de confirmação</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- nav ---------- */
+const TITLES={painel:["Painel","· visão geral"],influ:["Influenciadores","· carteira de talentos"],marcas:["Marcas","· funil de contato"],camp:["Campanhas","· prazos e pagamentos"],match:["Match","· montar casting"],ds:["Componentes","· referência da Direção C"]};
+function go(t){
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.go===t));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('v-'+t).classList.add('on');
+  document.getElementById('ptitle').textContent=TITLES[t][0];
+  document.getElementById('pcrumb').textContent=TITLES[t][1];
+}
+document.querySelectorAll('.navitem').forEach(n=>n.addEventListener('click',()=>go(n.dataset.go)));
+
+/* ---------- seletor de acento (controle da concept) ---------- */
+const ACCENTS=[
+  {n:'Petróleo',       a:'#1E6E66', d:'#14534D', s:'#DCEBE8', t:'#EFF6F4'},
+  {n:'Cerceta escura', a:'#0F5E5A', d:'#0A4744', s:'#D7E9E7', t:'#EDF5F4'},
+  {n:'Petróleo azul',  a:'#205C68', d:'#163F47', s:'#DBE9EC', t:'#EFF5F6'},
+  {n:'Esmeralda',      a:'#1B7A57', d:'#135A40', s:'#DBEDE3', t:'#EFF7F2'},
+  {n:'Pinheiro',       a:'#1E5A45', d:'#14442F', s:'#DCEAE2', t:'#EFF6F1'},
+  {n:'Floresta',       a:'#2F6B45', d:'#224E33', s:'#DFEBE0', t:'#F1F6F0'},
+  {n:'Sage profundo',  a:'#4A6356', d:'#374A40', s:'#E5EBE7', t:'#F1F5F2'},
+  {n:'Musgo',          a:'#546B4E', d:'#3F523B', s:'#E7EDE3', t:'#F2F5EF'},
+  {n:'Oliva',          a:'#5C6A3A', d:'#45512B', s:'#EAEDDD', t:'#F4F6EC'},
+];
+function setAccent(i){
+  i=Math.max(0,Math.min(ACCENTS.length-1,+i||0));
+  const c=ACCENTS[i], r=document.documentElement.style;
+  r.setProperty('--accent',c.a); r.setProperty('--accent-deep',c.d);
+  r.setProperty('--accent-soft',c.s); r.setProperty('--accent-tint',c.t);
+  document.querySelectorAll('.sw').forEach((s,j)=>s.classList.toggle('on',j===i));
+  const nm=document.getElementById('acName'); if(nm) nm.textContent=c.n;
+  persistAccent(i);
+}
+document.getElementById('swatches').innerHTML=ACCENTS.map((c,i)=>`<span class="sw" title="${c.n}" style="background:${c.a}" onclick="setAccent(${i})"></span>`).join('');
+setAccent(loadAccent());
+
 boot();
 </script>
+</body>
+</html>
