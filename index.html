@@ -333,6 +333,8 @@
   .ds-row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
   .ds-row+.ds-row{margin-top:11px}
   .ds-stack{display:flex; flex-direction:column; gap:11px}
+  .clinks a{display:inline-flex; align-items:center; gap:7px; color:var(--accent); text-decoration:none; font-weight:600}
+  .clinks a:hover{color:var(--accent-deep); text-decoration:underline}
   .type-spec{display:flex; align-items:baseline; gap:12px; padding:7px 0; border-bottom:1px solid var(--line-2)}
   .type-spec:last-child{border-bottom:0}
   .type-spec .tn{font-size:11px; color:var(--faint); width:64px; flex-shrink:0; font-family:var(--mono)}
@@ -1081,7 +1083,7 @@ function openContact(i){ const u=i.ig.replace('@',''); const wa=(i.phone||'').re
   if(wa)items.push(`<a href="https://wa.me/${wa}" target="_blank" rel="noopener">WhatsApp</a>`);
   if(i.tiktok)items.push(`<a href="https://tiktok.com/@${i.tiktok.replace('@','')}" target="_blank" rel="noopener">TikTok</a>`);
   if(i.email)items.push(`<a href="mailto:${i.email}">E-mail</a>`);
-  openModal(`<div class="m-h"><h3>Contato · ${esc(i.ig)}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div><div class="m-b"><div class="ds-stack" style="font-weight:600;gap:10px">${items.map(h=>`<div>${h}</div>`).join('')}</div></div>`);
+  openModal(`<div class="m-h"><h3>Contato · ${esc(i.ig)}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div><div class="m-b"><div class="ds-stack clinks" style="font-weight:600;gap:10px">${items.map(h=>`<div>${h}</div>`).join('')}</div></div>`);
 }
 
 function persistAccent(i){try{localStorage.setItem('ph_accent',i)}catch(e){}}
