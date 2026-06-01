@@ -151,7 +151,7 @@
   .toolbar .search{margin-left:0; width:280px}
   .seg{display:inline-flex; background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:3px; gap:2px}
   .seg button{border:0; background:none; font:inherit; font-size:12.5px; font-weight:600; color:var(--muted); padding:6px 12px; border-radius:7px; cursor:pointer}
-  .seg button.on{background:var(--ink); color:#fff}
+  .seg button.on{background:var(--accent); color:#fff}
   .spacer{flex:1}
   .count{font-size:12.5px; color:var(--faint); font-weight:500}
 
@@ -1075,11 +1075,13 @@ function openCampForm(c){ c=c||{}; const sel=new Set(c.influs||[]);
 }
 function delCamp(c){ sbDelete('campaigns',c.id).then(reloadRender).then(()=>toast('Campanha removida','ok')); }
 
-function openContact(i){ const wa=(i.phone||'').replace(/\D/g,''); const items=[`<a href="https://instagram.com/${i.ig.replace('@','')}" target="_blank" rel="noopener">Instagram</a>`];
+function openContact(i){ const u=i.ig.replace('@',''); const wa=(i.phone||'').replace(/\D/g,''); const items=[
+    `<a href="https://ig.me/m/${u}" target="_blank" rel="noopener">💬 Instagram Direct (DM)</a>`,
+    `<a href="https://instagram.com/${u}" target="_blank" rel="noopener">Abrir perfil no Instagram</a>`];
   if(wa)items.push(`<a href="https://wa.me/${wa}" target="_blank" rel="noopener">WhatsApp</a>`);
   if(i.tiktok)items.push(`<a href="https://tiktok.com/@${i.tiktok.replace('@','')}" target="_blank" rel="noopener">TikTok</a>`);
   if(i.email)items.push(`<a href="mailto:${i.email}">E-mail</a>`);
-  openModal(`<div class="m-h"><h3>Contato · ${esc(i.ig)}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div><div class="m-b"><div class="ds-stack" style="font-weight:600">${items.map(h=>`<div>${h}</div>`).join('')}</div></div>`);
+  openModal(`<div class="m-h"><h3>Contato · ${esc(i.ig)}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div><div class="m-b"><div class="ds-stack" style="font-weight:600;gap:10px">${items.map(h=>`<div>${h}</div>`).join('')}</div></div>`);
 }
 
 function persistAccent(i){try{localStorage.setItem('ph_accent',i)}catch(e){}}
