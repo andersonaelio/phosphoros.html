@@ -262,6 +262,8 @@
   body.dark .t-mega,body.dark .av-mega{background:#2C2230;color:#D9A9C6}
   body.dark .tl-kind.e{background:#16323F;color:#7FC4E0}
   body.dark thead th{background:var(--surface-2)}
+  body.dark .search input:focus,body.dark .ffield input:focus,body.dark .ffield select:focus,body.dark .field input:focus,body.dark .field select:focus,body.dark .field textarea:focus{background:var(--surface-2)}
+  body.dark .addbtn:hover{background:var(--surface-2)}
   body.dark .sw{box-shadow:0 0 0 1px var(--line) inset}
 
   /* ===================== gate (login / onboarding) ===================== */
@@ -417,6 +419,7 @@
         <input id="globalSearch" placeholder="Buscar perfil, marca, campanha…">
       </div>
       <button class="btn ghost" id="seedBtn" onclick="loadExample()" style="display:none">Carregar exemplo</button>
+      <button class="btn ghost" onclick="showInvite()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M17 8h5M19.5 5.5v5"/></svg>Convidar</button>
       <button class="icobtn" id="darkBtn" title="Tema claro/escuro" onclick="toggleDark()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></button>
       <button class="icobtn" title="Notificações"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
       <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
@@ -634,6 +637,25 @@ function renderPainel(){
       <div class="note-strip" style="margin-top:16px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
         <span><b>Engajamento:</b> complete 20 perfis para ativar a média da carteira e o ranking de performance.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="split" style="margin-top:14px">
+    <div class="card pad">
+      <div class="ctitle"><h3>Tabela de preços</h3><span class="count">base do valor automático · por 1.000 seguidores</span></div>
+      <div class="grid2" style="max-width:420px">
+        <div class="field" style="margin:0"><label>Reel · R$ / 1k</label><input id="rate_reel" type="number" value="${RATE_REEL}" onchange="saveRates()"></div>
+        <div class="field" style="margin:0"><label>Story · R$ / 1k</label><input id="rate_story" type="number" value="${RATE_STORY}" onchange="saveRates()"></div>
+      </div>
+      <div class="ds-note" style="margin-top:10px">Ex.: um perfil de 100k → reel ${fmtMoney(100000/1000*RATE_REEL)}. Cachê individual do influenciador sobrescreve a estimativa.</div>
+    </div>
+    <div class="card pad">
+      <div class="ctitle"><h3>Dados da carteira</h3></div>
+      <div class="ds-note" style="margin-bottom:12px">Exporte a carteira de talentos pra mandar pra marcas ou guardar.</div>
+      <div class="ds-row">
+        <button class="btn ghost" onclick="exportCsv()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>Exportar CSV</button>
+        <button class="btn ghost" onclick="exportPdf()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M7 3h7l5 5v13a0 0 0 0 1 0 0H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/></svg>Exportar PDF</button>
       </div>
     </div>
   </div>`;
@@ -901,7 +923,7 @@ document.addEventListener('click',e=>{
 /* ===== Supabase (multi-agência, isolado por workspace) ===== */
 const BUILTIN_URL='https://efskrnrpqgtgkaiulrpb.supabase.co';
 const BUILTIN_KEY='sb_publishable_BHuFybhaK0yANvm_NcOEJw_3vAsmnAI';
-let SB=null, USER=null, WS=null;
+let SB=null, USER=null, WS=null, WSNAME='', WSCODE='';
 function sbClient(){ if(!SB) SB=supabase.createClient(BUILTIN_URL,BUILTIN_KEY); return SB; }
 function val(id){const e=document.getElementById(id);return e?e.value:'';}
 function setText(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
@@ -914,7 +936,10 @@ async function afterAuth(){ const {data:mem}=await sbClient().from('members').se
 async function doCreateWs(){ const name=val('ws-name').trim(); if(!name)return setMsg('ob-msg','Dê um nome à agência.',true); setMsg('ob-msg','Criando…'); const {data,error}=await sbClient().rpc('create_workspace',{p_name:name}); if(error)return setMsg('ob-msg',error.message,true); WS=data; await afterLogin(); }
 async function doJoinWs(){ const code=val('ws-code').trim(); if(!code)return setMsg('ob-msg','Cole o código de convite.',true); setMsg('ob-msg','Entrando…'); const {data,error}=await sbClient().rpc('join_workspace',{p_code:code}); if(error)return setMsg('ob-msg',error.message,true); if(!data)return setMsg('ob-msg','Código não encontrado.',true); WS=data; await afterLogin(); }
 
-async function afterLogin(){ hideGate(); const em=(USER&&USER.email)||''; setText('navEmail',em); setText('navName',em.split('@')[0]||'Conta'); setText('navAva',(em[0]||'·').toUpperCase()); await sbLoadAll(); renderAll(); }
+async function afterLogin(){ hideGate();
+  try{ const {data:m}=await sbClient().from('members').select('workspace_id, workspaces(name,invite_code)').eq('workspace_id',WS).limit(1); if(m&&m.length&&m[0].workspaces){ WSNAME=m[0].workspaces.name||''; WSCODE=m[0].workspaces.invite_code||''; } }catch(e){}
+  const em=(USER&&USER.email)||''; setText('navEmail',em); setText('navName',WSNAME||em.split('@')[0]||'Conta'); setText('navAva',((WSNAME||em)[0]||'·').toUpperCase());
+  await sbLoadAll(); renderAll(); }
 
 function handleOf(h){ if(typeof h==='string'&&h.startsWith('@'))return h; const i=INF.find(x=>x.id===h); return i?i.ig:h; }
 const norm={
@@ -972,6 +997,37 @@ function renderAll(){ renderPainel(); renderInflu(); renderMarcas(); renderCamp(
 function updateBadges(){ const map={influ:INF.length,marcas:BRANDS.length,camp:CAMPAIGNS.length}; document.querySelectorAll('.navitem').forEach(n=>{const bd=n.querySelector('.badge'); if(bd&&map[n.dataset.go]!=null)bd.textContent=map[n.dataset.go];}); }
 
 async function loadExample(){ if(!confirm('Carregar 20 perfis + marcas e campanhas de exemplo nesta agência?'))return; for(const i of SEED_INF())await sbUpsert('influencers',i); for(const b of SEED_BRANDS)await sbUpsert('brands',b); for(const c of SEED_CAMPS)await sbUpsert('campaigns',c); await reloadRender(); toast('Exemplo carregado','ok'); }
+
+/* ----- convidar sócia ----- */
+function showInvite(){ openModal(`<div class="m-h"><h3>Convidar para a agência</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
+  <div class="m-b" style="line-height:1.6"><p style="margin:0 0 12px;color:var(--ink-2)">Mande este código para sua sócia. Ela cria a conta dela e usa <b>“Entrar com código”</b> para entrar na mesma agência${WSNAME?(' <b>'+esc(WSNAME)+'</b>'):''}.</p>
+  <div class="field" style="margin:0"><label>Código de convite</label><input id="inviteCode" value="${esc(WSCODE||'—')}" readonly onclick="this.select()"></div></div>
+  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Fechar</button><button class="btn" onclick="copyInvite()">Copiar código</button></div>`); }
+function copyInvite(){ const i=document.getElementById('inviteCode'); if(!i)return; i.select(); try{navigator.clipboard.writeText(i.value);}catch(e){} toast('Código copiado','ok'); }
+
+/* ----- tabela de preços ----- */
+async function saveRates(){ RATE_REEL=+val('rate_reel')||50; RATE_STORY=+val('rate_story')||20; try{ await sbClient().from('settings').upsert({workspace_id:WS,key:'rates',data:{reel:RATE_REEL,story:RATE_STORY}}); toast('Tabela de preços salva','ok'); }catch(e){ toast('Erro ao salvar','warn'); } renderPainel(); renderInflu(); renderMatch(); }
+
+/* ----- exportar ----- */
+function exportCsv(){
+  const head=['instagram','tiktok','seguidores','porte','geracao','cidade','nicho','valor_reel_estimado'];
+  const lines=INF.slice().sort((a,b)=>b.followers-a.followers).map(i=>[i.ig,i.tiktok,i.followers,tierOf(i.followers)[0],i.gen,(LOCS[i.loc]||i.loc||''),i.niche,Math.round(postValue(i))].map(c=>`"${(''+c).replace(/"/g,'""')}"`).join(','));
+  const blob=new Blob(['\ufeff'+[head.join(','),...lines].join('\n')],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='casting_'+((WSNAME||'phosphoros').toLowerCase().replace(/\s+/g,'_'))+'.csv'; a.click(); toast('CSV exportado','ok');
+}
+function exportPdf(){
+  const rows=INF.slice().sort((a,b)=>b.followers-a.followers);
+  if(!rows.length)return toast('Nenhum influenciador para exportar','warn');
+  const today=new Date().toLocaleDateString('pt-BR');
+  const body=rows.map(i=>`<tr><td>${esc(i.ig)}</td><td>${fmtN(i.followers)}</td><td>${tierOf(i.followers)[0]}</td><td>${esc(i.niche||'')}</td><td>${esc(LOCS[i.loc]||i.loc||'')}</td><td style="text-align:right">${fmtMoney(postValue(i))}</td></tr>`).join('');
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>Casting · ${esc(WSNAME||'Phosphoros')}</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;color:#13161C;padding:30px}h1{font-size:20px;margin:0}.sub{color:#666;font-size:12px;margin:2px 0 18px}table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;border-bottom:2px solid #1B7A57;padding:8px;color:#135A40;text-transform:uppercase;font-size:10px;letter-spacing:.05em}td{padding:7px 8px;border-bottom:1px solid #eee}tr:nth-child(even) td{background:#f6f9f8}.tot{margin-top:16px;font-size:12px;color:#444}</style></head>
+  <body><h1>Carteira de talentos — ${esc(WSNAME||'Phosphoros')}</h1><div class="sub">Gerado em ${today} · ${rows.length} perfis</div>
+  <table><thead><tr><th>Instagram</th><th>Seguidores</th><th>Porte</th><th>Nicho</th><th>Cidade</th><th style="text-align:right">Valor reel</th></tr></thead><tbody>${body}</tbody></table>
+  <div class="tot">Alcance somado: ${fmtN(rows.reduce((a,b)=>a+b.followers,0))} &middot; Valor estimado da carteira: ${fmtMoney(rows.reduce((a,b)=>a+postValue(b),0))}</div>
+  <scr`+`ipt>window.onload=function(){setTimeout(function(){window.print();},250);}<\/scr`+`ipt></body></html>`;
+  const w=window.open('','_blank'); if(!w)return toast('Permita pop-ups para gerar o PDF','warn'); w.document.write(html); w.document.close();
+}
 
 /* ----- formulários ----- */
 const GENS=['','Gen Z','Millennials','Gen X'];
