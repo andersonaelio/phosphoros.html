@@ -355,7 +355,7 @@
   <aside class="nav">
     <div class="brand">
       <span class="mark">
-        <svg width="18" height="18" viewBox="0 0 120 110" aria-hidden="true"><path d="M22 50 Q60 20 98 50" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/><circle cx="60" cy="48" r="9" stroke="#fff" stroke-width="8" fill="none"/></svg>
+        <svg width="20" height="18" viewBox="0 0 120 110" aria-hidden="true"><path d="M22 48 Q60 18 98 48" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="60" cy="46" r="8.5" stroke="#fff" stroke-width="7" fill="none"/><line x1="36" y1="72" x2="84" y2="72" stroke="#fff" stroke-width="7" stroke-linecap="round"/><line x1="44" y1="88" x2="76" y2="88" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>
       </span>
       <div>
         <div class="name">Phosphoros</div>
@@ -414,20 +414,15 @@
       <span class="crumb" id="pcrumb">· visão geral</span>
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input placeholder="Buscar perfil, marca, campanha…">
+        <input id="globalSearch" placeholder="Buscar perfil, marca, campanha…">
       </div>
+      <button class="btn ghost" id="seedBtn" onclick="loadExample()" style="display:none">Carregar exemplo</button>
       <button class="icobtn" id="darkBtn" title="Tema claro/escuro" onclick="toggleDark()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></button>
       <button class="icobtn" title="Notificações"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
       <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
     </header>
 
     <div class="content">
-      <div class="accentbar">
-        <span class="albl">Acento &nbsp;<b id="acName">Esmeralda</b></span>
-        <div class="swatches" id="swatches"></div>
-        <span class="hint">só o visual muda — dados ficam intactos</span>
-        <button class="btn ghost" style="margin-left:14px" onclick="loadExample()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2.2"><path d="M12 5v14M5 12h14"/></svg>Carregar exemplo</button>
-      </div>
       <!-- ===== PAINEL ===== -->
       <section class="view on" id="v-painel"></section>
       <!-- ===== INFLUENCIADORES ===== -->
@@ -448,7 +443,7 @@
 <div id="gate" class="gate" style="display:none">
   <div class="gate-card">
     <div class="gate-logo">
-      <span class="gate-mark"><svg width="30" height="28" viewBox="0 0 120 110" aria-hidden="true"><path d="M22 50 Q60 20 98 50" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/><circle cx="60" cy="48" r="9" stroke="#fff" stroke-width="8" fill="none"/></svg></span>
+      <span class="gate-mark"><svg width="32" height="29" viewBox="0 0 120 110" aria-hidden="true"><path d="M22 48 Q60 18 98 48" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="60" cy="46" r="8.5" stroke="#fff" stroke-width="7" fill="none"/><line x1="36" y1="72" x2="84" y2="72" stroke="#fff" stroke-width="7" stroke-linecap="round"/><line x1="44" y1="88" x2="76" y2="88" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg></span>
       <div style="text-align:center">
         <div class="gate-word">PHOSPHOROS</div>
         <div class="gate-tag">Clareza para quem gerencia talentos</div>
@@ -693,6 +688,7 @@ function renderInflu(){
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/></svg>
     <span><b>Direção C:</b> avatar em monograma plano (sem gradiente), número em mono, valor calculado, ícones de linha consistentes — densidade de SaaS com respiro.</span>
   </div>`;
+  wireInflu();
 }
 
 /* ---------- MARCAS ---------- */
@@ -726,6 +722,7 @@ function renderMarcas(){
         </div></td>
       </tr>`;}).join('')}</tbody>
   </table></div></div>`;
+  wireMarcas();
 }
 
 /* ---------- CAMPANHAS ---------- */
@@ -939,7 +936,39 @@ async function sbLoadAll(){ const c=sbClient();
 async function sbUpsert(table,rec){ const o=Object.assign({},rec); const id=String(o.id); delete o.id; await sbClient().from(table).upsert({id,workspace_id:WS,data:o}); }
 async function sbDelete(table,id){ await sbClient().from(table).delete().eq('id',String(id)).eq('workspace_id',WS); }
 async function reloadRender(){ await sbLoadAll(); renderAll(); }
-function renderAll(){ renderPainel(); renderInflu(); renderMarcas(); renderCamp(); renderMatch(); renderDS(); updateBadges(); }
+function wireInflu(){
+  const view=document.getElementById('v-influ'); if(!view)return;
+  const search=view.querySelector('.toolbar .search input');
+  const segBtns=view.querySelectorAll('.seg button');
+  function apply(){
+    const q=(search&&search.value||'').trim().toLowerCase();
+    const active=view.querySelector('.seg button.on');
+    const tf=active?active.textContent.trim().toLowerCase():'todos';
+    view.querySelectorAll('.inf').forEach(card=>{
+      const txt=card.textContent.toLowerCase();
+      const tEl=card.querySelector('.tier'); const tier=tEl?tEl.textContent.trim().toLowerCase():'';
+      const okQ=!q||txt.includes(q);
+      const okT=tf==='todos'||tier===tf;
+      card.style.display=(okQ&&okT)?'':'none';
+    });
+  }
+  if(search)search.oninput=apply;
+  segBtns.forEach(b=>b.onclick=()=>{segBtns.forEach(x=>x.classList.remove('on'));b.classList.add('on');apply();});
+}
+function wireMarcas(){
+  const view=document.getElementById('v-marcas'); if(!view)return;
+  const search=view.querySelector('.toolbar .search input');
+  if(search)search.oninput=()=>{const q=search.value.trim().toLowerCase();view.querySelectorAll('tbody tr').forEach(tr=>{tr.style.display=(!q||tr.textContent.toLowerCase().includes(q))?'':'none';});};
+}
+function wireGlobalSearch(){
+  const gi=document.getElementById('globalSearch'); if(!gi||gi._wired)return; gi._wired=true;
+  gi.oninput=()=>{ const q=gi.value.trim().toLowerCase(); const v=currentView();
+    if(v==='influ'){const s=document.querySelector('#v-influ .toolbar .search input'); if(s){s.value=gi.value; s.oninput&&s.oninput();}}
+    else if(v==='marcas'){const s=document.querySelector('#v-marcas .toolbar .search input'); if(s){s.value=gi.value; s.oninput&&s.oninput();}}
+    else if(v==='camp'){document.querySelectorAll('#v-camp tbody tr').forEach(tr=>{tr.style.display=(!q||tr.textContent.toLowerCase().includes(q))?'':'none';});}
+  };
+}
+function renderAll(){ renderPainel(); renderInflu(); renderMarcas(); renderCamp(); renderMatch(); renderDS(); updateBadges(); wireGlobalSearch(); const sb=document.getElementById('seedBtn'); if(sb)sb.style.display=(!INF.length&&!BRANDS.length&&!CAMPAIGNS.length)?'':'none'; }
 function updateBadges(){ const map={influ:INF.length,marcas:BRANDS.length,camp:CAMPAIGNS.length}; document.querySelectorAll('.navitem').forEach(n=>{const bd=n.querySelector('.badge'); if(bd&&map[n.dataset.go]!=null)bd.textContent=map[n.dataset.go];}); }
 
 async function loadExample(){ if(!confirm('Carregar 20 perfis + marcas e campanhas de exemplo nesta agência?'))return; for(const i of SEED_INF())await sbUpsert('influencers',i); for(const b of SEED_BRANDS)await sbUpsert('brands',b); for(const c of SEED_CAMPS)await sbUpsert('campaigns',c); await reloadRender(); toast('Exemplo carregado','ok'); }
@@ -1099,8 +1128,7 @@ function setAccent(i){
   const nm=document.getElementById('acName'); if(nm) nm.textContent=c.n;
   persistAccent(i);
 }
-document.getElementById('swatches').innerHTML=ACCENTS.map((c,i)=>`<span class="sw" title="${c.n}" style="background:${c.a}" onclick="setAccent(${i})"></span>`).join('');
-setAccent(loadAccent());
+(function lockAccent(){ const c=ACCENTS[3], r=document.documentElement.style; r.setProperty('--accent',c.a); r.setProperty('--accent-deep',c.d); r.setProperty('--accent-soft',c.s); r.setProperty('--accent-tint',c.t); })();
 
 boot();
 </script>
