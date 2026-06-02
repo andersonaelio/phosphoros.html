@@ -796,7 +796,7 @@ function renderCamp(){
         <td>${dueCell(c.entrega,entregue)}</td>
         <td>${dueCell(c.pag,c.status==='Pago')}</td>
         <td>${statusChip(c.status,CAMP_STATUS)}</td>
-        <td>${statusChip(c.nf||'Não emitida',NF_STATUS)}</td>
+        <td>${statusChip(c.nf||'Não emitida',NF_STATUS)}${c.nf_date?`<div class="cell-sub">${fmtDate(c.nf_date)}</div>`:''}${c.nf_file?`<div class="cell-sub"><a href="#" onclick="openNf('${esc(String(c.id))}');return false;" style="color:var(--accent);font-weight:600">ver nota</a></div>`:''}</td>
         <td><div class="row-acts">
           <button class="miniico" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>
           <button class="miniico" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"/></svg></button>
@@ -953,7 +953,7 @@ function handleOf(h){ if(typeof h==='string'&&h.startsWith('@'))return h; const 
 const norm={
   inf:d=>({id:d.id,ig:d.ig||'',followers:+d.followers||0,gen:d.gen||'',loc:d.loc||'',niche:d.niche||'',brand:d.brand||'',tiktok:d.tiktok||'',phone:d.phone||'',email:d.email||'',cache:d.cache||'',notas:d.notas||''}),
   brand:d=>({id:d.id,name:d.name||'',status:d.status||'Prospect',niche:d.niche||'',contato:d.contato||'',ult:d.ult||d.ultimoContato||'',notas:d.notas||''}),
-  camp:d=>({id:d.id,titulo:d.titulo||'',brand:d.brand||'',influs:Array.isArray(d.influs)?d.influs.map(handleOf):[],valor:+d.valor||0,entrega:d.entrega||'',pag:d.pag||d.pagamento||'',status:d.status||'A produzir',nf:d.nf||'Não emitida',notas:d.notas||''})
+  camp:d=>({id:d.id,titulo:d.titulo||'',brand:d.brand||'',influs:Array.isArray(d.influs)?d.influs.map(handleOf):[],valor:+d.valor||0,entrega:d.entrega||'',pag:d.pag||d.pagamento||'',status:d.status||'A produzir',nf:d.nf||'Não emitida',nf_date:d.nf_date||'',nf_file:d.nf_file||'',notas:d.notas||''})
 };
 async function sbLoadAll(){ const c=sbClient();
   const [inf,br,ca,st]=await Promise.all([
@@ -1080,17 +1080,45 @@ function openCampForm(c){ c=c||{}; const sel=new Set(c.influs||[]);
     ${field('Título','f_tit',c.titulo,'Ex: Coleção Inverno')}${field('Marca','f_cbrand',c.brand,'Nome da marca')}
     ${field('Valor R$','f_valor',c.valor,'ex: 4000','number')}${selField('Status','f_cstatus',Object.keys(CAMP_STATUS),c.status||'A produzir')}
     ${field('Entrega','f_entrega',c.entrega,'','date')}${field('Pagamento','f_pag',c.pag,'','date')}
-    ${selField('Nota fiscal','f_nf',['Não emitida','Emitida'],c.nf||'Não emitida')}
+    <div class="field" style="grid-column:1/3"><label>Nota fiscal</label>
+      <div class="grid2" style="gap:10px;margin:0">
+        <select id="f_nf"><option ${(c.nf||'Não emitida')==='Não emitida'?'selected':''}>Não emitida</option><option ${c.nf==='Emitida'?'selected':''}>Emitida</option></select>
+        <input id="f_nfdate" type="date" value="${esc(c.nf_date||'')}" title="Data de emissão">
+      </div>
+      <div style="margin-top:8px"><input type="file" id="f_nffile" accept="application/pdf,image/*" style="padding:6px">
+        ${c.nf_file?`<div style="margin-top:7px;font-size:12.5px"><a href="#" onclick="openNf('${esc(String(c.id))}');return false;" style="color:var(--accent);font-weight:600">Ver nota anexada</a> &nbsp;·&nbsp; <label style="color:var(--muted);font-weight:500"><input type="checkbox" id="f_nfremove" style="width:auto"> remover anexo</label></div>`:'<div style="margin-top:5px;font-size:11.5px;color:var(--muted)">PDF ou imagem · opcional</div>'}
+      </div>
+    </div>
     ${areaField('Observações','f_cnotas',c.notas)}
     <div class="field" style="grid-column:1/3"><label>Influenciadores no casting</label><div class="roster" style="max-height:210px;overflow:auto">${roster||'<span class="muted">Cadastre influenciadores primeiro.</span>'}</div></div>
   </div></div>
   <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" id="saveBtn">Salvar</button></div>`);
   document.getElementById('saveBtn').onclick=async()=>{ const titulo=val('f_tit').trim(); if(!titulo)return toast('Informe o título','warn');
     const influs=[].slice.call(document.querySelectorAll('#modal2 .roster input:checked')).map(x=>x.value);
-    const rec={id:c.id||('c'+Date.now()),titulo,brand:val('f_cbrand').trim(),valor:+val('f_valor')||0,status:val('f_cstatus'),entrega:val('f_entrega'),pag:val('f_pag'),nf:val('f_nf'),notas:val('f_cnotas').trim(),influs};
+    const campId=c.id||('c'+Date.now());
+    let nf_file=c.nf_file||'';
+    const rmv=document.getElementById('f_nfremove'); const fileEl=document.getElementById('f_nffile');
+    const btn=document.getElementById('saveBtn');
+    if(rmv&&rmv.checked&&nf_file){ try{await sbClient().storage.from('notas').remove([nf_file]);}catch(e){} nf_file=''; }
+    if(fileEl&&fileEl.files&&fileEl.files[0]){ btn.textContent='Enviando nota…'; btn.disabled=true; const up=await uploadNf(campId,fileEl.files[0]); btn.disabled=false; btn.textContent='Salvar'; if(up){ if(nf_file&&up!==nf_file){try{await sbClient().storage.from('notas').remove([nf_file]);}catch(e){}} nf_file=up; } else { return; } }
+    const rec={id:campId,titulo,brand:val('f_cbrand').trim(),valor:+val('f_valor')||0,status:val('f_cstatus'),entrega:val('f_entrega'),pag:val('f_pag'),nf:val('f_nf'),nf_date:val('f_nfdate'),nf_file,notas:val('f_cnotas').trim(),influs};
     closeModal(); await sbUpsert('campaigns',rec); await reloadRender(); toast('Campanha salva','ok'); };
 }
 function delCamp(c){ sbDelete('campaigns',c.id).then(reloadRender).then(()=>toast('Campanha removida','ok')); }
+async function uploadNf(campId,file){
+  if(file.size>10*1024*1024){ toast('Arquivo muito grande (máx. 10MB)','warn'); return null; }
+  const ext=((file.name.split('.').pop())||'pdf').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const path=`${WS}/${campId}_${Date.now()}.${ext}`;
+  const {error}=await sbClient().storage.from('notas').upload(path,file,{upsert:true});
+  if(error){ toast('Falha no upload: '+error.message,'warn'); return null; }
+  return path;
+}
+async function openNf(campId){
+  const c=CAMPAIGNS.find(x=>String(x.id)===String(campId)); if(!c||!c.nf_file)return;
+  const {data,error}=await sbClient().storage.from('notas').createSignedUrl(c.nf_file,3600);
+  if(error||!data){ toast('Não consegui abrir a nota','warn'); return; }
+  window.open(data.signedUrl,'_blank');
+}
 
 function openContact(i){ const u=i.ig.replace('@',''); const wa=(i.phone||'').replace(/\D/g,''); const items=[
     `<a href="https://ig.me/m/${u}" target="_blank" rel="noopener">💬 Instagram Direct (DM)</a>`,
