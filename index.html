@@ -212,6 +212,14 @@
   .sidepanel .sp-item .sp-val{font-weight:700; font-size:13px; color:var(--accent); font-family:'JetBrains Mono',monospace}
   .sp-overlay{position:fixed; inset:0; background:rgba(0,0,0,.25); z-index:899; display:none}
   .sp-overlay.open{display:block}
+  /* prospecting */
+  .prospbtn{appearance:none; border:1px solid #D97706; background:transparent; color:#D97706; font-size:11px; font-weight:700; padding:4px 10px; border-radius:8px; cursor:pointer; transition:.15s; white-space:nowrap}
+  .prospbtn:hover{background:#FFF7E6}
+  .prospbtn.on{background:#D97706; color:#fff; border-color:#D97706}
+  .prospbtn.on:hover{background:#B45E05}
+  body.dark .prospbtn:hover{background:#2E2006}
+  body.dark .prospbtn.on{background:#D97706; color:#fff}
+  .inf.prospected{border-color:#D97706; box-shadow:0 0 0 1px #D97706, var(--shadow)}
 
   .note-strip{display:flex; gap:9px; align-items:flex-start; margin-top:22px; padding:13px 15px; background:var(--accent-tint); border:1px solid var(--accent-soft); border-radius:10px; font-size:12.5px; color:var(--ink-2)}
   .note-strip svg{width:16px;height:16px;color:var(--accent-deep);stroke-width:2;flex-shrink:0;margin-top:1px}
@@ -705,12 +713,14 @@ function renderInflu(){
     <div class="spacer"></div>
     <span class="count">${rows.length} perfis · porte e valor automáticos</span>
     <button class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Novo perfil</button>
+    ${PROSP.active?`<button class="btn" style="background:#D97706;border-color:#D97706;color:#fff" onclick="openProspPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>${esc(PROSP.active.name)} (${PROSP.active.handles.length})</button>`
+    :`<button class="btn ghost" onclick="startProsp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>Nova prospecção</button>`}
   </div>
   <div class="grid">
     ${rows.map(i=>{
       const[t,cl]=tierOf(i.followers);
       const meta=[LOCS[i.loc]||i.loc||'', i.gen||''].filter(Boolean).join(' · ')||'—';
-      return `<div class="inf">
+      return `<div class="inf${PROSP.active&&PROSP.active.handles.includes(i.ig)?' prospected':''}">
         ${(()=>{ const camps=infCamps(i.ig); if(camps.length) return `<div class="camp-badges">${camps.map(c=>`<span class="camp-badge" onclick="openCampPanel('${esc(String(c.id))}')" title="${esc(c.titulo)}">${esc(c.titulo)}</span>`).join('')}</div>`; return i.brand?`<span class="linkflag">${esc(i.brand)}</span>`:''; })()}
         <div class="inf-top">
           ${avatar(i.ig,i.followers)}
@@ -730,6 +740,7 @@ function renderInflu(){
         <div class="inf-niches">${nicheTags(i.niche).map(n=>`<span class="chip">${esc(n)}</span>`).join('')}</div>
         <div class="inf-foot">
           <span class="inf-val">reel ~ <b>${fmtMoney(reelVal(i.followers))}</b></span>
+          ${PROSP.active?(PROSP.active.handles.includes(i.ig)?`<button class="prospbtn on" onclick="toggleProsp('${esc(i.ig)}')">✓ Prospectado</button>`:`<button class="prospbtn" onclick="toggleProsp('${esc(i.ig)}')">+ Prospectar</button>`):''}
           <button class="contact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Contato</button>
         </div>
       </div>`;
@@ -973,7 +984,7 @@ async function doJoinWs(){ const code=val('ws-code').trim(); if(!code)return set
 async function afterLogin(){ hideGate();
   try{ const {data:m}=await sbClient().from('members').select('workspace_id, workspaces(name,invite_code)').eq('workspace_id',WS).limit(1); if(m&&m.length&&m[0].workspaces){ WSNAME=m[0].workspaces.name||''; WSCODE=m[0].workspaces.invite_code||''; } }catch(e){}
   const em=(USER&&USER.email)||''; setText('navEmail',em); setText('navName',WSNAME||em.split('@')[0]||'Conta'); setText('navAva',((WSNAME||em)[0]||'·').toUpperCase());
-  await sbLoadAll(); renderAll(); }
+  await sbLoadAll(); await loadProsp(); renderAll(); }
 
 function handleOf(h){ if(typeof h==='string'&&h.startsWith('@'))return h; const i=INF.find(x=>x.id===h); return i?i.ig:h; }
 const norm={
@@ -1170,6 +1181,93 @@ function openCampPanel(campId){
 function closeSidePanel(){
   document.getElementById('sidePanel').classList.remove('open');
   document.getElementById('spOverlay').classList.remove('open');
+}
+
+/* ===== PROSPECÇÃO (lista de trabalho temporária) ===== */
+let PROSP={active:null, history:[]};
+
+async function loadProsp(){
+  try{ const {data}=await sbClient().from('settings').select('data').eq('workspace_id',WS).eq('key','prospecting').single();
+    if(data&&data.data){ PROSP.active=data.data.active||null; PROSP.history=data.data.history||[]; }
+  }catch(e){ PROSP={active:null,history:[]}; }
+}
+async function saveProsp(){
+  try{ await sbClient().from('settings').upsert({workspace_id:WS,key:'prospecting',data:{active:PROSP.active,history:PROSP.history}}); }catch(e){}
+}
+
+function startProsp(){
+  openModal(`<div class="m-h"><h3>Nova prospecção</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
+  <div class="m-b"><p style="color:var(--ink-2);font-size:13px;margin:0 0 12px">Dê um nome pra esta rodada de prospecção (ex: o nome da marca ou campanha).</p>
+    <div class="field"><label>Nome</label><input id="f_prospname" placeholder="Ex: Lua e Neve"></div>
+  </div>
+  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" id="saveBtn">Iniciar prospecção</button></div>`);
+  document.getElementById('saveBtn').onclick=async()=>{ const name=val('f_prospname').trim(); if(!name)return toast('Dê um nome à prospecção','warn');
+    PROSP.active={name,date:new Date().toISOString().slice(0,10),handles:[]};
+    await saveProsp(); closeModal(); renderInflu(); toast('Prospecção "'+name+'" iniciada — agora marque os perfis','ok');
+  };
+}
+
+async function toggleProsp(ig){
+  if(!PROSP.active)return;
+  const idx=PROSP.active.handles.indexOf(ig);
+  if(idx>=0) PROSP.active.handles.splice(idx,1); else PROSP.active.handles.push(ig);
+  await saveProsp(); renderInflu();
+}
+
+function openProspPanel(){
+  if(!PROSP.active)return;
+  const handles=PROSP.active.handles;
+  const items=handles.map(h=>{const i=INF.find(x=>x.ig===h); return i||{ig:h,followers:0,niche:'',loc:''};});
+  const totReach=items.reduce((a,b)=>a+b.followers,0);
+  document.getElementById('spTitle').innerHTML=`<span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#D97706;display:block;margin-bottom:2px">Prospecção ativa</span>${esc(PROSP.active.name)}`;
+  document.getElementById('spBody').innerHTML=`
+    <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12.5px;color:var(--ink-2)">
+      <span><b class="num" style="font-size:16px;color:var(--ink)">${items.length}</b> perfis marcados</span>
+      <span><b class="num" style="font-size:16px;color:var(--ink)">${fmtN(totReach)}</b> alcance</span>
+      <span style="font-size:11px;color:var(--ink-2)">Iniciada em ${fmtDate(PROSP.active.date)}</span>
+    </div>
+    ${items.length?`<div style="display:flex;flex-direction:column;gap:4px">${items.map(i=>{
+      const [t,cl]=tierOf(i.followers);
+      return `<div class="sp-item">
+        ${avatar(i.ig,i.followers)}
+        <div class="sp-info"><div class="sp-handle">${esc(i.ig)}</div><div class="sp-meta">${fmtN(i.followers)} seg · <span class="tier ${cl}" style="font-size:10px">${t}</span> · ${esc(i.niche||'')}</div></div>
+        <button class="prospbtn on" onclick="toggleProsp('${esc(i.ig)}');openProspPanel()" style="font-size:10px;padding:3px 8px">✕</button>
+      </div>`;
+    }).join('')}</div>`:'<p style="color:var(--ink-2);font-size:13px">Nenhum perfil marcado ainda. Clique em <b>"+ Prospectar"</b> nos cards.</p>'}
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" style="background:#D97706;border-color:#D97706;color:#fff" onclick="finishProsp()">Finalizar prospecção</button>
+      <button class="btn ghost" onclick="cancelProsp()">Cancelar prospecção</button>
+      ${PROSP.history.length?`<button class="btn ghost" onclick="showProspHistory()" style="margin-left:auto">Histórico (${PROSP.history.length})</button>`:''}
+    </div>`;
+  document.getElementById('sidePanel').classList.add('open');
+  document.getElementById('spOverlay').classList.add('open');
+}
+
+async function finishProsp(){
+  if(!PROSP.active)return;
+  if(!PROSP.active.handles.length)return toast('Marque pelo menos um perfil antes de finalizar','warn');
+  PROSP.history.unshift({name:PROSP.active.name, date:PROSP.active.date, finished:new Date().toISOString().slice(0,10), handles:PROSP.active.handles.slice(), count:PROSP.active.handles.length});
+  if(PROSP.history.length>50) PROSP.history=PROSP.history.slice(0,50);
+  PROSP.active=null;
+  await saveProsp(); closeSidePanel(); renderInflu(); toast('Prospecção finalizada e salva no histórico','ok');
+}
+
+async function cancelProsp(){
+  if(!confirm('Cancelar a prospecção ativa? Os perfis marcados serão desmarcados.'))return;
+  PROSP.active=null;
+  await saveProsp(); closeSidePanel(); renderInflu(); toast('Prospecção cancelada','ok');
+}
+
+function showProspHistory(){
+  let html=`<div style="margin-bottom:14px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Histórico de prospecções</div>`;
+  if(!PROSP.history.length){ html+='<p class="muted">Nenhuma prospecção finalizada ainda.</p>'; }
+  else{ html+=PROSP.history.map(h=>`<div style="padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
+    <div style="font-weight:700;font-size:14px">${esc(h.name)}</div>
+    <div style="font-size:12px;color:var(--ink-2);margin:3px 0">${h.count} perfis · ${fmtDate(h.date)} → ${fmtDate(h.finished)}</div>
+    <div style="font-size:11.5px;color:var(--ink-2)">${h.handles.map(x=>esc(x)).join(', ')}</div>
+  </div>`).join(''); }
+  document.getElementById('spTitle').innerHTML='Histórico';
+  document.getElementById('spBody').innerHTML=html+`<div style="margin-top:14px"><button class="btn ghost" onclick="openProspPanel()">← Voltar</button></div>`;
 }
 async function uploadNf(campId,file){
   if(file.size>10*1024*1024){ toast('Arquivo muito grande (máx. 10MB)','warn'); return null; }
