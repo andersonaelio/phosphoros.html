@@ -192,6 +192,26 @@
   .contact svg{width:14px; height:14px; stroke-width:2}
   .contact:hover{border-color:var(--accent); color:var(--accent-deep); background:var(--accent-tint)}
   .linkflag{position:absolute; top:14px; right:14px; font-size:10.5px; font-weight:600; color:var(--green); background:var(--green-soft); padding:2px 8px; border-radius:7px}
+  .camp-badges{position:absolute; top:12px; right:12px; display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; max-width:60%}
+  .camp-badge{font-size:10px; font-weight:700; letter-spacing:.02em; color:#8B5E0A; background:linear-gradient(135deg,#FFF3D6,#FFE4A8); border:1px solid #EAC96C; padding:3px 9px; border-radius:8px; cursor:pointer; white-space:nowrap; transition:.15s; text-transform:uppercase}
+  .camp-badge:hover{background:linear-gradient(135deg,#FFEBB0,#FFD66B); border-color:#D4A934; transform:scale(1.04)}
+  body.dark .camp-badge{color:#F5D060; background:linear-gradient(135deg,#2E2608,#3D320F); border-color:#5C4B1A}
+  body.dark .camp-badge:hover{background:linear-gradient(135deg,#3D320F,#544418); border-color:#8B7530}
+  /* side panel */
+  .sidepanel{position:fixed; top:0; right:-420px; width:400px; max-width:90vw; height:100vh; background:var(--surface); border-left:1px solid var(--border); box-shadow:-8px 0 40px rgba(0,0,0,.15); z-index:900; transition:right .25s ease; overflow-y:auto; padding:20px}
+  .sidepanel.open{right:0}
+  .sidepanel .sp-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px}
+  .sidepanel .sp-head h3{margin:0; font-size:16px}
+  .sidepanel .sp-close{appearance:none; border:none; background:none; cursor:pointer; color:var(--ink-2); font-size:20px; padding:4px 8px}
+  .sidepanel .sp-close:hover{color:var(--ink)}
+  .sidepanel .sp-item{display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px; transition:.1s}
+  .sidepanel .sp-item:hover{background:var(--surface-2)}
+  .sidepanel .sp-item .sp-info{flex:1; min-width:0}
+  .sidepanel .sp-item .sp-handle{font-weight:600; font-size:13.5px}
+  .sidepanel .sp-item .sp-meta{font-size:11.5px; color:var(--ink-2)}
+  .sidepanel .sp-item .sp-val{font-weight:700; font-size:13px; color:var(--accent); font-family:'JetBrains Mono',monospace}
+  .sp-overlay{position:fixed; inset:0; background:rgba(0,0,0,.25); z-index:899; display:none}
+  .sp-overlay.open{display:block}
 
   .note-strip{display:flex; gap:9px; align-items:flex-start; margin-top:22px; padding:13px 15px; background:var(--accent-tint); border:1px solid var(--accent-soft); border-radius:10px; font-size:12.5px; color:var(--ink-2)}
   .note-strip svg{width:16px;height:16px;color:var(--accent-deep);stroke-width:2;flex-shrink:0;margin-top:1px}
@@ -442,6 +462,12 @@
 </div>
 
 <!-- ============ GATE: login / onboarding ============ -->
+<div class="sp-overlay" id="spOverlay" onclick="closeSidePanel()"></div>
+<div class="sidepanel" id="sidePanel">
+  <div class="sp-head"><h3 id="spTitle">Campanha</h3><button class="sp-close" onclick="closeSidePanel()">✕</button></div>
+  <div id="spBody"></div>
+</div>
+
 <div id="gate" class="gate" style="display:none">
   <div class="gate-card">
     <div class="gate-logo">
@@ -685,7 +711,7 @@ function renderInflu(){
       const[t,cl]=tierOf(i.followers);
       const meta=[LOCS[i.loc]||i.loc||'', i.gen||''].filter(Boolean).join(' · ')||'—';
       return `<div class="inf">
-        ${i.brand?`<span class="linkflag">${esc(i.brand)}</span>`:''}
+        ${(()=>{ const camps=infCamps(i.ig); if(camps.length) return `<div class="camp-badges">${camps.map(c=>`<span class="camp-badge" onclick="openCampPanel('${esc(String(c.id))}')" title="${esc(c.titulo)}">${esc(c.titulo)}</span>`).join('')}</div>`; return i.brand?`<span class="linkflag">${esc(i.brand)}</span>`:''; })()}
         <div class="inf-top">
           ${avatar(i.ig,i.followers)}
           <div class="inf-id">
@@ -1105,6 +1131,46 @@ function openCampForm(c){ c=c||{}; const sel=new Set(c.influs||[]);
     closeModal(); await sbUpsert('campaigns',rec); await reloadRender(); toast('Campanha salva','ok'); };
 }
 function delCamp(c){ sbDelete('campaigns',c.id).then(reloadRender).then(()=>toast('Campanha removida','ok')); }
+
+/* ----- campanhas de cada influenciador ----- */
+function infCamps(ig){ return CAMPAIGNS.filter(c=>Array.isArray(c.influs)&&c.influs.includes(ig)); }
+
+/* ----- painel lateral (roster de campanha) ----- */
+function openCampPanel(campId){
+  const c=CAMPAIGNS.find(x=>String(x.id)===String(campId)); if(!c)return;
+  const handles=c.influs||[];
+  const items=handles.map(h=>{const i=INF.find(x=>x.ig===h); return i||{ig:h,followers:0,niche:'',loc:''};});
+  items.sort((a,b)=>b.followers-a.followers);
+  const totReach=items.reduce((a,b)=>a+b.followers,0);
+  const totVal=items.reduce((a,b)=>a+postValue(b),0);
+  document.getElementById('spTitle').innerHTML=`<span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);display:block;margin-bottom:2px">Campanha</span>${esc(c.titulo)}`;
+  document.getElementById('spBody').innerHTML=`
+    <div style="display:flex;gap:16px;margin-bottom:16px;font-size:12.5px;color:var(--ink-2)">
+      <span><b class="num" style="font-size:16px;color:var(--ink)">${items.length}</b> perfis</span>
+      <span><b class="num" style="font-size:16px;color:var(--ink)">${fmtN(totReach)}</b> alcance</span>
+      <span><b class="num" style="font-size:16px;color:var(--accent)">${fmtMoney(totVal)}</b> valor</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">${items.map(i=>{
+      const [t,cl]=tierOf(i.followers);
+      const meta=[LOCS[i.loc]||i.loc||'',i.niche||''].filter(Boolean).join(' · ')||'';
+      return `<div class="sp-item">
+        ${avatar(i.ig,i.followers)}
+        <div class="sp-info"><div class="sp-handle">${esc(i.ig)}</div><div class="sp-meta">${fmtN(i.followers)} seg · <span class="tier ${cl}" style="font-size:10px">${t}</span>${meta?' · '+esc(meta):''}</div></div>
+        <div class="sp-val">${fmtMoney(postValue(i))}</div>
+      </div>`;
+    }).join('')}</div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--ink-2)">
+      Status: ${statusChip(c.status,CAMP_STATUS)} &nbsp; Marca: <b>${esc(c.brand||'—')}</b>
+      ${c.entrega?` &nbsp; Entrega: <b>${fmtDate(c.entrega)}</b>`:''}
+      ${c.notas?`<div style="margin-top:8px;color:var(--ink)">${esc(c.notas)}</div>`:''}
+    </div>`;
+  document.getElementById('sidePanel').classList.add('open');
+  document.getElementById('spOverlay').classList.add('open');
+}
+function closeSidePanel(){
+  document.getElementById('sidePanel').classList.remove('open');
+  document.getElementById('spOverlay').classList.remove('open');
+}
 async function uploadNf(campId,file){
   if(file.size>10*1024*1024){ toast('Arquivo muito grande (máx. 10MB)','warn'); return null; }
   const ext=((file.name.split('.').pop())||'pdf').toLowerCase().replace(/[^a-z0-9]/g,'');
