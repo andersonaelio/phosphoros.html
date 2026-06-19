@@ -958,6 +958,7 @@ document.addEventListener('click',e=>{
   const nb=e.target.closest('.btn');
   if(nb && /Nov[ao]/.test(nb.textContent)){
     const txt=nb.textContent;
+    if(/prospec/i.test(txt)) return;
     if(/perfil|influ/i.test(txt)) openInfForm();
     else if(/marca/i.test(txt)) openBrandForm();
     else if(/campanha/i.test(txt)) openCampForm();
