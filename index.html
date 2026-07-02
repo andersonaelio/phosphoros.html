@@ -90,16 +90,18 @@
   @keyframes fade{from{opacity:0; transform:translateY(4px)}to{opacity:1; transform:none}}
 
   /* ===================== cards ===================== */
-  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease}
   .pad{padding:18px 20px}
   .ctitle{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px}
   .ctitle h3{margin:0; font-size:14px; font-weight:700; letter-spacing:-.01em}
   .ctitle .link{font-size:12.5px; font-weight:600; color:var(--accent-deep); cursor:pointer}
   .ctitle .link:hover{text-decoration:underline}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:none}}
 
   /* ---- KPI row ---- */
   .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
-  .kpi{padding:16px 17px; position:relative; overflow:hidden}
+  .kpi{padding:16px 17px; position:relative; overflow:hidden; animation:fadeUp .45s ease backwards}
+  .kpi:hover{transform:translateY(-3px); box-shadow:0 10px 26px -12px rgba(0,0,0,.22)}
   .kpi .lab{font-size:12px; color:var(--muted); font-weight:600; display:flex; align-items:center; gap:7px}
   .kpi .lab svg{width:14px; height:14px; color:var(--faint); stroke-width:2}
   .kpi .val{font-size:29px; font-weight:600; margin-top:11px; line-height:1; letter-spacing:-.03em}
@@ -260,7 +262,8 @@
   .summary .sv{font-size:22px; font-weight:600; font-family:var(--mono); letter-spacing:-.02em}
   .summary .sl{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--accent-deep); font-weight:600; margin-top:3px}
   .roster{display:flex; flex-direction:column; gap:9px}
-  .rcard{display:flex; align-items:center; gap:13px; padding:11px 14px; border:1px solid var(--line); border-radius:11px; background:var(--surface); transition:border-color .14s, background .14s}
+  .rcard{display:flex; align-items:center; gap:13px; padding:11px 14px; border:1px solid var(--line); border-radius:11px; background:var(--surface); transition:border-color .14s, background .14s, transform .14s, box-shadow .14s}
+  .rcard:hover{transform:translateY(-1px); box-shadow:0 8px 20px -16px rgba(16,20,28,.45)}
   .rcard.sel{border-color:var(--accent); background:var(--accent-tint)}
   .rcard .rid{flex:1; min-width:0}
   .rcard .rh{font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:8px}
@@ -623,24 +626,24 @@ function renderPainel(){
 
   document.getElementById('v-painel').innerHTML=`
   <div class="kpis">
-    <div class="card kpi">
+    <div class="card kpi" style="animation-delay:.02s">
       <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>Influenciadores</div>
-      <div class="val num">${total}</div>
+      <div class="val num"><span class="numval" data-target="${total}" data-fmt="int">${total}</span></div>
       <div class="meta"><span class="note">na carteira</span></div>
     </div>
-    <div class="card kpi">
+    <div class="card kpi" style="animation-delay:.08s">
       <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7"/><circle cx="12" cy="12" r="2.5"/></svg>Alcance somado</div>
-      <div class="val num">${fmtN(reach)}</div>
+      <div class="val num"><span class="numval" data-target="${reach}" data-fmt="compact">${fmtN(reach)}</span></div>
       <div class="meta"><span class="note">média ${fmtN(Math.round(avg))}/perfil</span></div>
     </div>
-    <div class="card kpi">
+    <div class="card kpi" style="animation-delay:.14s">
       <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M8 7h6a2.5 2.5 0 0 1 0 5H8m0 0h7"/></svg>Valor do casting</div>
-      <div class="val num">${fmtMoney(rosterVal).replace('R$ ','R$')}<span class="unit"></span></div>
+      <div class="val num"><span class="numval" data-target="${rosterVal}" data-fmt="money">${fmtMoney(rosterVal).replace('R$ ','R$')}</span><span class="unit"></span></div>
       <div class="meta"><span class="delta flat">1 post/perfil</span><span class="note">base da tabela atual</span></div>
     </div>
-    <div class="card kpi">
+    <div class="card kpi" style="animation-delay:.2s">
       <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>A receber</div>
-      <div class="val num">${fmtMoney(aReceber).replace('R$ ','R$')}</div>
+      <div class="val num"><span class="numval" data-target="${aReceber}" data-fmt="money">${fmtMoney(aReceber).replace('R$ ','R$')}</span></div>
       <div class="meta"><span class="note">${nextPay?('vence '+_whenT(daysUntil(nextPay.iso))):'sem pagamentos abertos'}</span></div>
     </div>
   </div>
@@ -696,6 +699,28 @@ function renderPainel(){
       </div>
     </div>
   </div>`;
+  animateKpiNumbers(document.getElementById('v-painel'));
+}
+
+/* ---------- animação de números (count-up) ---------- */
+function animateKpiNumbers(scope){
+  const fmts={
+    int:v=>Math.round(v).toLocaleString('pt-BR'),
+    compact:v=>fmtN(Math.round(v)),
+    money:v=>fmtMoney(v).replace('R$ ','R$')
+  };
+  (scope||document).querySelectorAll('.numval[data-target]').forEach(el=>{
+    const target=+el.dataset.target||0;
+    const fmt=fmts[el.dataset.fmt]||fmts.int;
+    const dur=650, start=performance.now();
+    function step(now){
+      const p=Math.min(1,(now-start)/dur);
+      const eased=1-Math.pow(1-p,3);
+      el.textContent=fmt(target*eased);
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
 }
 
 /* ---------- INFLUENCIADORES ---------- */
@@ -800,19 +825,19 @@ function renderCamp(){
   const whenT=d=>d<0?`${-d}d atrás`:d===0?'hoje':`em ${d}d`;
   document.getElementById('v-camp').innerHTML=`
   <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
-    <div class="card kpi">
+    <div class="card kpi" style="animation-delay:.02s">
       <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l14-6v14L3 13z"/><path d="M17 7a3 3 0 0 1 0 6"/></svg>Campanhas</div>
-      <div class="val num">${total}</div>
+      <div class="val num"><span class="numval" data-target="${total}" data-fmt="int">${total}</span></div>
       <div class="meta"><span class="delta flat">${abertas.length} em aberto</span></div>
     </div>
-    <div class="card kpi">
+    <div class="card kpi" style="animation-delay:.08s">
       <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>A receber</div>
-      <div class="val num">${fmtMoney(aReceber).replace('R$ ','R$')}</div>
+      <div class="val num"><span class="numval" data-target="${aReceber}" data-fmt="money">${fmtMoney(aReceber).replace('R$ ','R$')}</span></div>
       <div class="meta"><span class="delta warn">a faturar</span></div>
     </div>
-    <div class="card kpi">
+    <div class="card kpi" style="animation-delay:.14s">
       <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Próximo prazo</div>
-      <div class="val num">${next.length?fmtDate(next[0].iso):'—'}</div>
+      <div class="val num"${next.length?'':' style="color:var(--faint);font-size:16px;font-weight:500;margin-top:14px"'}>${next.length?fmtDate(next[0].iso):'nada agendado por enquanto'}</div>
       <div class="meta"><span class="note">${next.length?next[0].kind.toLowerCase()+' · '+esc(next[0].c.brand):''}</span></div>
     </div>
   </div>
@@ -840,6 +865,7 @@ function renderCamp(){
         </div></td>
       </tr>`;}).join('')}</tbody>
   </table></div></div>`;
+  animateKpiNumbers(document.getElementById('v-camp'));
 }
 
 /* ---------- MATCH ---------- */
