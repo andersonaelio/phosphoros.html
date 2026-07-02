@@ -448,7 +448,7 @@
       <span class="crumb" id="pcrumb">· carteira de talentos</span>
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="globalSearch" type="search" autocomplete="off" name="ph_search_global" placeholder="Buscar perfil, campanha…">
+        <input id="globalSearch" type="search" autocomplete="off" name="ph_search_global" placeholder="Buscar perfil, campanha…" readonly onfocus="this.removeAttribute('readonly')">
       </div>
       <button class="btn ghost" id="seedBtn" onclick="loadExample()" style="display:none">Carregar exemplo</button>
       <button class="btn ghost" onclick="showInvite()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M17 8h5M19.5 5.5v5"/></svg>Convidar</button>
@@ -628,7 +628,7 @@ function renderInflu(){
   <div class="toolbar">
     <div class="search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="search" autocomplete="off" name="ph_search_influ" placeholder="Buscar perfil, nicho, cidade…">
+      <input type="search" autocomplete="off" name="ph_search_influ" placeholder="Buscar perfil, nicho, cidade…" readonly onfocus="this.removeAttribute('readonly')">
     </div>
     <div class="seg">
       <button class="on">Todos</button><button>Nano</button><button>Micro</button><button>Macro</button>
