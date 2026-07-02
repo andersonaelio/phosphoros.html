@@ -419,31 +419,14 @@
 
     <div class="navsec">Menu</div>
     <div class="navlist">
-      <button class="navitem active" data-go="painel">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-        Painel
-      </button>
-      <button class="navitem" data-go="influ">
+      <button class="navitem active" data-go="influ">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.5a3 3 0 0 1 0 5.4M18 19a5.4 5.4 0 0 0-3-4.7"/></svg>
         Influenciadores <span class="badge">20</span>
-      </button>
-      <button class="navitem" data-go="marcas">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-4.5h15L21 9"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 9a3 3 0 0 0 6 0"/></svg>
-        Marcas <span class="badge">6</span>
       </button>
       <button class="navitem" data-go="camp">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l14-6v14L3 13z"/><path d="M17 7a3 3 0 0 1 0 6"/><path d="M6 13v3a2 2 0 0 0 2 2h1"/></svg>
         Campanhas <span class="badge">4</span>
       </button>
-    </div>
-
-    <div class="navsec">Ferramentas</div>
-    <div class="navlist">
-      <button class="navitem" data-go="match">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>
-        Match de casting
-      </button>
-
     </div>
 
     <div class="nav-foot">
@@ -461,8 +444,8 @@
   <!-- ============ MAIN ============ -->
   <main class="main">
     <header class="topbar">
-      <h1 id="ptitle">Painel</h1>
-      <span class="crumb" id="pcrumb">· visão geral</span>
+      <h1 id="ptitle">Influenciadores</h1>
+      <span class="crumb" id="pcrumb">· carteira de talentos</span>
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="globalSearch" placeholder="Buscar perfil, marca, campanha…">
@@ -475,16 +458,10 @@
     </header>
 
     <div class="content">
-      <!-- ===== PAINEL ===== -->
-      <section class="view on" id="v-painel"></section>
       <!-- ===== INFLUENCIADORES ===== -->
-      <section class="view" id="v-influ"></section>
-      <!-- ===== MARCAS ===== -->
-      <section class="view" id="v-marcas"></section>
+      <section class="view on" id="v-influ"></section>
       <!-- ===== CAMPANHAS ===== -->
       <section class="view" id="v-camp"></section>
-      <!-- ===== MATCH ===== -->
-      <section class="view" id="v-match"></section>
       <!-- ===== COMPONENTES ===== -->
       <section class="view" id="v-ds"></section>
     </div>
@@ -588,7 +565,6 @@ const TODAY=(()=>{const d=new Date();d.setHours(0,0,0,0);return d;})();
 const daysUntil=iso=>iso?Math.round((new Date(iso+'T00:00:00')-TODAY)/864e5):null;
 const fmtDate=iso=>{if(!iso)return '—';const p=iso.split('-');return p[2]+'/'+p[1];};
 const dash='<span style="color:var(--faint)">—</span>';
-const BRAND_STATUS={Prospect:'#727A87',Contatado:'#2C6E8F',Respondeu:'#B07514',Ativa:'#1B7A57','Sem retorno':'#9AA1AD',Pausada:'#C2543B'};
 const CAMP_STATUS={'A produzir':'#B07514','Conteúdo entregue':'#2C6E8F','Aguardando pagamento':'#C2543B','Pago':'#1B7A57'};
 const CASTING_STAGES=[
   {key:'prospectando',label:'Prospectando',color:'#B07514'},
@@ -622,112 +598,6 @@ function spark(points,color){
   const pts=points.map((p,i)=>`${(i/(points.length-1)*w).toFixed(1)},${(h-2-(p-mn)/(mx-mn||1)*(h-6)).toFixed(1)}`).join(' ');
   const last=pts.split(' ').pop().split(',');
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" fill="none"><polyline points="${pts}" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2" fill="${color}"/></svg>`;
-}
-
-/* ---------- PAINEL ---------- */
-function renderPainel(){
-  const total=INF.length;
-  const reach=INF.reduce((a,b)=>a+b.followers,0);
-  const avg=total?reach/total:0;
-  const rosterVal=INF.reduce((a,b)=>a+postValue(b),0);
-  const tiers={nano:0,micro:0,macro:0,mega:0};
-  INF.forEach(i=>tiers[tierOf(i.followers)[0]]++);
-  const tierMeta={nano:["Nano","< 10k"],micro:["Micro","10k–100k"],macro:["Macro","100k–1M"],mega:["Mega","1M+"]};
-
-  const nm={};
-  INF.forEach(i=>nicheTags(i.niche).forEach(t=>{const k=t.toLowerCase();nm[k]=(nm[k]||0)+1;}));
-  const niches=Object.entries(nm).sort((a,b)=>b[1]-a[1]).slice(0,8);
-
-  /* agenda real (a partir das campanhas) */
-  const _ev=[];
-  CAMPAIGNS.forEach(c=>{
-    const entregue=['Conteúdo entregue','Aguardando pagamento','Pago'].includes(c.status);
-    if(c.entrega&&!entregue) _ev.push({kind:'Entrega',cls:'e',iso:c.entrega,c});
-    if(c.pag&&c.status!=='Pago') _ev.push({kind:'Pagamento',cls:'p',iso:c.pag,c});
-  });
-  _ev.sort((a,b)=>a.iso.localeCompare(b.iso));
-  const _whenT=d=>d<0?`${-d}d atrás`:d===0?'hoje':`em ${d}d`;
-  const _stOf=d=>d<0?'late':d<=3?'soon':'';
-  const agenda=_ev.slice(0,4).map(e=>{const d=daysUntil(e.iso);return{kind:e.kind,cls:e.cls,when:_whenT(d),state:_stOf(d),desc:`<b>${esc(e.c.titulo)}</b> · ${e.kind==='Pagamento'?fmtMoney(e.c.valor):esc(e.c.brand)}`};});
-  const aReceber=CAMPAIGNS.filter(c=>c.status!=='Pago').reduce((a,b)=>a+(+b.valor||0),0);
-  const nextPay=_ev.filter(e=>e.kind==='Pagamento')[0];
-
-  document.getElementById('v-painel').innerHTML=`
-  <div class="kpis">
-    <div class="card kpi" style="animation-delay:.02s">
-      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>Influenciadores</div>
-      <div class="val num"><span class="numval" data-target="${total}" data-fmt="int">${total}</span></div>
-      <div class="meta"><span class="note">na carteira</span></div>
-    </div>
-    <div class="card kpi" style="animation-delay:.08s">
-      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7"/><circle cx="12" cy="12" r="2.5"/></svg>Alcance somado</div>
-      <div class="val num"><span class="numval" data-target="${reach}" data-fmt="compact">${fmtN(reach)}</span></div>
-      <div class="meta"><span class="note">média ${fmtN(Math.round(avg))}/perfil</span></div>
-    </div>
-    <div class="card kpi" style="animation-delay:.14s">
-      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M8 7h6a2.5 2.5 0 0 1 0 5H8m0 0h7"/></svg>Valor do casting</div>
-      <div class="val num"><span class="numval" data-target="${rosterVal}" data-fmt="money">${fmtMoney(rosterVal).replace('R$ ','R$')}</span><span class="unit"></span></div>
-      <div class="meta"><span class="delta flat">1 post/perfil</span><span class="note">base da tabela atual</span></div>
-    </div>
-    <div class="card kpi" style="animation-delay:.2s">
-      <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>A receber</div>
-      <div class="val num"><span class="numval" data-target="${aReceber}" data-fmt="money">${fmtMoney(aReceber).replace('R$ ','R$')}</span></div>
-      <div class="meta"><span class="note">${nextPay?('vence '+_whenT(daysUntil(nextPay.iso))):'sem pagamentos abertos'}</span></div>
-    </div>
-  </div>
-
-  <div class="dash">
-    <div class="card pad">
-      <div class="ctitle"><h3>Distribuição por porte</h3><span class="count" style="font-family:var(--mono)">${total} perfis</span></div>
-      <div class="bars">
-        ${Object.keys(tiers).map(t=>{
-          const c=tiers[t]; const[nm,rg]=tierMeta[t];
-          return `<div class="bar">
-            <div class="bn">${nm}<small>${rg}</small></div>
-            <div class="track"><div class="fill" style="width:${c/total*100}%;background:${t==='macro'?'var(--accent)':t==='micro'?'var(--green)':t==='mega'?'#7A4A63':'#C7CCD4'}"></div></div>
-            <div class="bv">${c}</div>
-          </div>`;
-        }).join('')}
-      </div>
-      <div class="ctitle" style="margin-top:22px"><h3>Nichos do casting</h3></div>
-      <div class="niches">
-        ${niches.map(([n,c])=>`<span class="ntag">${esc(n)} <span class="c">${c}</span></span>`).join('')}
-      </div>
-    </div>
-
-    <div class="card pad">
-      <div class="ctitle"><h3>Próximos prazos</h3><span class="link">Ver agenda →</span></div>
-      <div class="tl">
-        ${agenda.map(a=>`<div class="tl-row ${a.state}">
-          <div class="tl-top">
-            <span class="tl-kind ${a.cls}">${a.kind}</span>
-            <span class="tl-when ${a.state}">${a.when}</span>
-          </div>
-          <div class="tl-desc">${a.desc}</div>
-        </div>`).join('')}
-      </div>
-    </div>
-  </div>
-
-  <div class="split" style="margin-top:14px">
-    <div class="card pad">
-      <div class="ctitle"><h3>Tabela de preços</h3><span class="count">base do valor automático · por 1.000 seguidores</span></div>
-      <div class="grid2" style="max-width:420px">
-        <div class="field" style="margin:0"><label>Reel · R$ / 1k</label><input id="rate_reel" type="number" value="${RATE_REEL}" onchange="saveRates()"></div>
-        <div class="field" style="margin:0"><label>Story · R$ / 1k</label><input id="rate_story" type="number" value="${RATE_STORY}" onchange="saveRates()"></div>
-      </div>
-      <div class="ds-note" style="margin-top:10px">Ex.: um perfil de 100k → reel ${fmtMoney(100000/1000*RATE_REEL)}. Cachê individual do influenciador sobrescreve a estimativa.</div>
-    </div>
-    <div class="card pad">
-      <div class="ctitle"><h3>Dados da carteira</h3></div>
-      <div class="ds-note" style="margin-bottom:12px">Exporte a carteira de talentos pra mandar pra marcas ou guardar.</div>
-      <div class="ds-row">
-        <button class="btn ghost" onclick="exportCsv()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>Exportar CSV</button>
-        <button class="btn ghost" onclick="exportPdf()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M7 3h7l5 5v13a0 0 0 0 1 0 0H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/></svg>Exportar PDF</button>
-      </div>
-    </div>
-  </div>`;
-  animateKpiNumbers(document.getElementById('v-painel'));
 }
 
 /* ---------- animação de números (count-up) ---------- */
@@ -765,6 +635,9 @@ function renderInflu(){
     </div>
     <div class="spacer"></div>
     <span class="count">${rows.length} perfis · porte e valor automáticos</span>
+    <button class="icobtn" title="Tabela de preços" onclick="openRatesForm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <button class="icobtn" title="Exportar CSV" onclick="exportCsv()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg></button>
+    <button class="icobtn" title="Exportar PDF" onclick="exportPdf()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 3h7l5 5v13a0 0 0 0 1 0 0H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/></svg></button>
     <button class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Novo perfil</button>
     ${PROSP.active?`<button class="btn" style="background:#D97706;border-color:#D97706;color:#fff" onclick="openProspPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>${esc(PROSP.active.name)} (${PROSP.active.handles.length})</button>`
     :`<button class="btn ghost" onclick="startProsp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>Nova prospecção</button>`}
@@ -800,40 +673,6 @@ function renderInflu(){
     }).join('')}
   </div>`;
   wireInflu();
-}
-
-/* ---------- MARCAS ---------- */
-function renderMarcas(){
-  const counts={}; Object.keys(BRAND_STATUS).forEach(s=>counts[s]=0);
-  BRANDS.forEach(b=>{ if(counts[b.status]!=null)counts[b.status]++; });
-  document.getElementById('v-marcas').innerHTML=`
-  <div class="funnel">
-    ${Object.keys(BRAND_STATUS).map(s=>`<div class="fstage"><div class="fc num">${counts[s]}</div><div class="fl" style="--dotc:${BRAND_STATUS[s]}">${s}</div></div>`).join('')}
-  </div>
-  <div class="toolbar">
-    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Buscar marca…"></div>
-    <div class="spacer"></div>
-    <span class="count">${BRANDS.length} marcas no funil</span>
-    <button class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Nova marca</button>
-  </div>
-  <div class="card tbl-wrap"><div class="tbl-scroll"><table>
-    <thead><tr><th>Marca</th><th>Status</th><th>Contato</th><th>Últ.</th><th>Conectados</th><th>Retorno / notas</th><th></th></tr></thead>
-    <tbody>${BRANDS.map(b=>{
-      const conn=INF.filter(i=>(i.brand||'').toLowerCase()===b.name.toLowerCase());
-      return `<tr>
-        <td><div class="cell-strong">${brandTag(b.name)}</div><div class="cell-sub">${nicheTags(b.niche).map(esc).join(' · ')}</div></td>
-        <td>${statusChip(b.status,BRAND_STATUS)}</td>
-        <td>${b.contato&&b.contato!=='—'?esc(b.contato):dash}</td>
-        <td>${b.ult?`<span class="num" style="font-size:12.5px">${fmtDate(b.ult)}</span>`:dash}</td>
-        <td>${conn.length?`<div class="chip-row">${conn.map(c=>`<span class="chip">${esc(c.ig)}</span>`).join('')}</div>`:dash}</td>
-        <td style="max-width:240px; color:var(--ink-2)">${esc(b.notas)||dash}</td>
-        <td><div class="row-acts">
-          <button class="miniico" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>
-          <button class="miniico" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"/></svg></button>
-        </div></td>
-      </tr>`;}).join('')}</tbody>
-  </table></div></div>`;
-  wireMarcas();
 }
 
 /* ---------- CAMPANHAS ---------- */
@@ -883,7 +722,7 @@ function renderCamp(){
     <thead><tr><th>Campanha</th><th>Marca</th><th>Influenciadores</th><th>Valor</th><th>Entrega</th><th>Pagamento</th><th>Status</th><th>NF</th><th></th></tr></thead>
     <tbody>${CAMPAIGNS.map(c=>{
       const entregue=['Conteúdo entregue','Aguardando pagamento','Pago'].includes(c.status);
-      return `<tr class="camp-row" onclick="openCampDetail('${esc(String(c.id))}')" style="cursor:pointer">
+      return `<tr class="camp-row" onclick="campRowClick(event,'${esc(String(c.id))}')" style="cursor:pointer">
         <td><div class="cell-strong">${esc(c.titulo)}</div>${c.notas?`<div class="cell-sub">${esc(c.notas)}</div>`:''}</td>
         <td>${brandTag(c.brand)}</td>
         <td><div class="chip-row">${c.influs.map(h=>`<span class="chip">${esc(h)}</span>`).join('')}</div></td>
@@ -903,6 +742,7 @@ function renderCamp(){
 
 /* ---------- KANBAN de casting (dentro de uma campanha) ---------- */
 function openCampDetail(id){ campDetail=id; renderCamp(); }
+function campRowClick(e,id){ if(e.target.closest('.miniico'))return; openCampDetail(id); }
 function closeCampDetail(){ campDetail=null; renderCamp(); }
 
 function renderCampKanban(c){
@@ -954,63 +794,6 @@ async function kbDrop(e,campId,stage){
   catch(err){ toast('Erro ao salvar, tenta de novo','warn'); }
 }
 
-/* ---------- MATCH ---------- */
-let mState={niche:'',tier:'all',loc:'',budget:'',brand:'',sel:new Set()};
-function matchResults(){
-  let list=INF.filter(i=>{
-    const nN=!mState.niche||nicheTags(i.niche).some(t=>t.toLowerCase().includes(mState.niche.toLowerCase()));
-    const tN=mState.tier==='all'||tierOf(i.followers)[0]===mState.tier;
-    const lN=!mState.loc||(''+i.loc).toLowerCase().includes(mState.loc.toLowerCase())||(LOCS[i.loc]||'').toLowerCase().includes(mState.loc.toLowerCase());
-    return nN&&tN&&lN;
-  }).sort((a,b)=>b.followers-a.followers);
-  const sel=INF.filter(i=>mState.sel.has(i.ig));
-  const totReach=sel.reduce((a,b)=>a+b.followers,0);
-  const totCost=sel.reduce((a,b)=>a+postValue(b),0);
-  const over=mState.budget&&totCost>+mState.budget;
-  return `
-  ${sel.length?`<div class="summary">
-    <div><div class="sv">${sel.length}</div><div class="sl">no casting</div></div>
-    <div><div class="sv">${fmtN(totReach)}</div><div class="sl">alcance</div></div>
-    <div><div class="sv" style="${over?'color:var(--danger)':''}">${fmtMoney(totCost)}</div><div class="sl">custo est.${over?' · acima do orçamento':''}</div></div>
-  </div>
-  <button class="btn" onclick="saveCastingAsCamp()" style="width:100%;justify-content:center;margin-bottom:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px;height:16px;stroke-width:2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Salvar como campanha</button>`:''}
-  <div class="roster">${list.length?list.map(i=>{
-    const[t,cl]=tierOf(i.followers); const on=mState.sel.has(i.ig);
-    return `<div class="rcard ${on?'sel':''}">
-      ${avatar(i.ig,i.followers)}
-      <div class="rid"><div class="rh">${esc(i.ig)} <span class="tier ${cl}">${t}</span></div><div class="rm">${fmtN(i.followers)} seg · ${esc(i.niche)||'—'} · ${LOCS[i.loc]||i.loc||'—'}</div></div>
-      <div class="rv"><div class="rval">${fmtMoney(postValue(i))}</div><button class="addbtn" onclick="toggleSel('${i.ig}')">${on?'remover':'+ casting'}</button></div>
-    </div>`;}).join(''):`<div class="card pad" style="text-align:center; color:var(--muted)">Nenhum perfil bate com esses filtros.</div>`}</div>`;
-}
-function toggleSel(ig){ mState.sel.has(ig)?mState.sel.delete(ig):mState.sel.add(ig); document.getElementById('matchResults').innerHTML=matchResults(); }
-function saveCastingAsCamp(){
-  const sel=INF.filter(i=>mState.sel.has(i.ig));
-  if(!sel.length)return toast('Monte um casting primeiro','warn');
-  const valor=sel.reduce((a,b)=>a+postValue(b),0);
-  openCampForm({influs:sel.map(i=>i.ig), valor, brand:(mState.brand||'').trim(), status:'A produzir'});
-}
-function renderMatch(){
-  document.getElementById('v-match').innerHTML=`
-  <div class="match">
-    <div class="card pad">
-      <div class="ctitle"><h3>Filtros da campanha</h3></div>
-      <div class="ffield"><label>Nicho</label><input id="m_niche" placeholder="ex: maternidade"></div>
-      <div class="ffield"><label>Porte</label><select id="m_tier"><option value="all">Qualquer</option><option value="nano">Nano</option><option value="micro">Micro</option><option value="macro">Macro</option><option value="mega">Mega</option></select></div>
-      <div class="ffield"><label>Local</label><input id="m_loc" placeholder="ex: Recife (opcional)"></div>
-      <div class="ffield"><label>Orçamento (R$)</label><input id="m_budget" type="number" placeholder="opcional"></div>
-      <div class="ffield"><label>Para a marca (opcional)</label><input id="m_brand" placeholder="ex: RN"></div>
-      <div class="note-strip" style="margin:4px 0 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/></svg><span>Marque perfis pra montar o casting — alcance e custo somam na hora.</span></div>
-    </div>
-    <div id="matchResults">${matchResults()}</div>
-  </div>`;
-  wireMatch();
-}
-function wireMatch(){
-  const map={m_niche:'niche',m_loc:'loc',m_budget:'budget',m_brand:'brand'};
-  Object.entries(map).forEach(([id,k])=>{const el=document.getElementById(id); if(el)el.oninput=()=>{mState[k]=el.value; document.getElementById('matchResults').innerHTML=matchResults();};});
-  const ts=document.getElementById('m_tier'); if(ts)ts.onchange=()=>{mState.tier=ts.value; document.getElementById('matchResults').innerHTML=matchResults();};
-}
-
 /* ---------- tema (persistido) ---------- */
 const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>';
 const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.3 5.3 6.7 6.7M17.3 17.3l1.4 1.4M18.7 5.3 17.3 6.7M6.7 17.3 5.3 18.7"/></svg>';
@@ -1052,7 +835,7 @@ function toast(msg,type){
   setTimeout(()=>{el.style.transition='opacity .3s,transform .3s'; el.style.opacity='0'; el.style.transform='translateX(14px)'; setTimeout(()=>el.remove(),300);},2600);
 }
 /* ===== ações reais via delegação (sem tocar nos renders) ===== */
-function currentView(){ const a=document.querySelector('.navitem.active'); return a?a.dataset.go:'painel'; }
+function currentView(){ const a=document.querySelector('.navitem.active'); return a?a.dataset.go:'influ'; }
 function infByHandle(h){ return INF.find(i=>i.ig===h); }
 document.addEventListener('click',e=>{
   const ct=e.target.closest('.contact');
@@ -1062,9 +845,9 @@ document.addEventListener('click',e=>{
     if(card){ const a=card.querySelector('.inf-h a'); const i=a&&infByHandle(a.textContent.trim()); if(!i)return;
       if(t==='Remover') confirmModal({title:'Remover influenciador?',body:`<b>${esc(i.ig)}</b> sairá da carteira.`,onConfirm:()=>delInf(i)}); else openInfForm(i); return; }
     const tr=mi.closest('tr');
-    if(tr){ const v=currentView(); const key=tr.querySelector('.cell-strong')?tr.querySelector('.cell-strong').textContent.trim():'';
-      if(v==='marcas'){ const b=BRANDS.find(x=>x.name===key); if(!b)return; if(t==='Remover') confirmModal({title:'Remover marca?',body:`<b>${esc(b.name)}</b> sairá do funil.`,onConfirm:()=>delBrand(b)}); else openBrandForm(b); }
-      else if(v==='camp'){ const c=CAMPAIGNS.find(x=>x.titulo===key); if(!c)return; if(t==='Remover') confirmModal({title:'Remover campanha?',body:`<b>${esc(c.titulo)}</b> será removida.`,onConfirm:()=>delCamp(c)}); else openCampForm(c); }
+    if(tr){ const key=tr.querySelector('.cell-strong')?tr.querySelector('.cell-strong').textContent.trim():'';
+      const c=CAMPAIGNS.find(x=>x.titulo===key); if(!c)return;
+      if(t==='Remover') confirmModal({title:'Remover campanha?',body:`<b>${esc(c.titulo)}</b> será removida.`,onConfirm:()=>delCamp(c)}); else openCampForm(c);
       return; }
   }
   const nb=e.target.closest('.btn');
@@ -1072,9 +855,8 @@ document.addEventListener('click',e=>{
     const txt=nb.textContent;
     if(/prospec/i.test(txt)) return;
     if(/perfil|influ/i.test(txt)) openInfForm();
-    else if(/marca/i.test(txt)) openBrandForm();
     else if(/campanha/i.test(txt)) openCampForm();
-    else { const v=currentView(); v==='marcas'?openBrandForm():v==='camp'?openCampForm():openInfForm(); }
+    else { const v=currentView(); v==='camp'?openCampForm():openInfForm(); }
   }
 });
 
@@ -1106,13 +888,11 @@ const norm={
   camp:d=>({id:d.id,titulo:d.titulo||'',brand:d.brand||'',influs:Array.isArray(d.influs)?d.influs.map(handleOf):[],valor:+d.valor||0,entrega:d.entrega||'',pag:d.pag||d.pagamento||'',status:d.status||'A produzir',nf:d.nf||'Não emitida',nf_date:d.nf_date||'',nf_file:d.nf_file||'',notas:d.notas||'',etapas:(d.etapas&&typeof d.etapas==='object')?d.etapas:{}})
 };
 async function sbLoadAll(){ const c=sbClient();
-  const [inf,br,ca,st]=await Promise.all([
+  const [inf,ca,st]=await Promise.all([
     c.from('influencers').select('id,data').eq('workspace_id',WS),
-    c.from('brands').select('id,data').eq('workspace_id',WS),
     c.from('campaigns').select('id,data').eq('workspace_id',WS),
     c.from('settings').select('key,data').eq('workspace_id',WS)]);
   INF=(inf.data||[]).map(r=>norm.inf(Object.assign({id:r.id},r.data)));
-  BRANDS=(br.data||[]).map(r=>norm.brand(Object.assign({id:r.id},r.data)));
   CAMPAIGNS=(ca.data||[]).map(r=>norm.camp(Object.assign({id:r.id},r.data)));
   const rt=(st.data||[]).find(x=>x.key==='rates'); if(rt&&rt.data){RATE_REEL=+rt.data.reel||50;RATE_STORY=+rt.data.story||20;}
 }
@@ -1138,23 +918,17 @@ function wireInflu(){
   if(search)search.oninput=apply;
   segBtns.forEach(b=>b.onclick=()=>{segBtns.forEach(x=>x.classList.remove('on'));b.classList.add('on');apply();});
 }
-function wireMarcas(){
-  const view=document.getElementById('v-marcas'); if(!view)return;
-  const search=view.querySelector('.toolbar .search input');
-  if(search)search.oninput=()=>{const q=search.value.trim().toLowerCase();view.querySelectorAll('tbody tr').forEach(tr=>{tr.style.display=(!q||tr.textContent.toLowerCase().includes(q))?'':'none';});};
-}
 function wireGlobalSearch(){
   const gi=document.getElementById('globalSearch'); if(!gi||gi._wired)return; gi._wired=true;
   gi.oninput=()=>{ const q=gi.value.trim().toLowerCase(); const v=currentView();
     if(v==='influ'){const s=document.querySelector('#v-influ .toolbar .search input'); if(s){s.value=gi.value; s.oninput&&s.oninput();}}
-    else if(v==='marcas'){const s=document.querySelector('#v-marcas .toolbar .search input'); if(s){s.value=gi.value; s.oninput&&s.oninput();}}
     else if(v==='camp'){document.querySelectorAll('#v-camp tbody tr').forEach(tr=>{tr.style.display=(!q||tr.textContent.toLowerCase().includes(q))?'':'none';});}
   };
 }
-function renderAll(){ renderPainel(); renderInflu(); renderMarcas(); renderCamp(); renderMatch(); renderDS(); updateBadges(); wireGlobalSearch(); const sb=document.getElementById('seedBtn'); if(sb)sb.style.display=(!INF.length&&!BRANDS.length&&!CAMPAIGNS.length)?'':'none'; }
-function updateBadges(){ const map={influ:INF.length,marcas:BRANDS.length,camp:CAMPAIGNS.length}; document.querySelectorAll('.navitem').forEach(n=>{const bd=n.querySelector('.badge'); if(bd&&map[n.dataset.go]!=null)bd.textContent=map[n.dataset.go];}); }
+function renderAll(){ renderInflu(); renderCamp(); renderDS(); updateBadges(); wireGlobalSearch(); const sb=document.getElementById('seedBtn'); if(sb)sb.style.display=(!INF.length&&!CAMPAIGNS.length)?'':'none'; }
+function updateBadges(){ const map={influ:INF.length,camp:CAMPAIGNS.length}; document.querySelectorAll('.navitem').forEach(n=>{const bd=n.querySelector('.badge'); if(bd&&map[n.dataset.go]!=null)bd.textContent=map[n.dataset.go];}); }
 
-async function loadExample(){ if(!confirm('Carregar 20 perfis + marcas e campanhas de exemplo nesta agência?'))return; for(const i of SEED_INF())await sbUpsert('influencers',i); for(const b of SEED_BRANDS)await sbUpsert('brands',b); for(const c of SEED_CAMPS)await sbUpsert('campaigns',c); await reloadRender(); toast('Exemplo carregado','ok'); }
+async function loadExample(){ if(!confirm('Carregar 20 perfis + campanhas de exemplo nesta agência?'))return; for(const i of SEED_INF())await sbUpsert('influencers',i); for(const c of SEED_CAMPS)await sbUpsert('campaigns',c); await reloadRender(); toast('Exemplo carregado','ok'); }
 
 /* ----- convidar sócia ----- */
 function showInvite(){ openModal(`<div class="m-h"><h3>Convidar para a agência</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
@@ -1164,7 +938,19 @@ function showInvite(){ openModal(`<div class="m-h"><h3>Convidar para a agência<
 function copyInvite(){ const i=document.getElementById('inviteCode'); if(!i)return; i.select(); try{navigator.clipboard.writeText(i.value);}catch(e){} toast('Código copiado','ok'); }
 
 /* ----- tabela de preços ----- */
-async function saveRates(){ RATE_REEL=+val('rate_reel')||50; RATE_STORY=+val('rate_story')||20; try{ await sbClient().from('settings').upsert({workspace_id:WS,key:'rates',data:{reel:RATE_REEL,story:RATE_STORY}}); toast('Tabela de preços salva','ok'); }catch(e){ toast('Erro ao salvar','warn'); } renderPainel(); renderInflu(); renderMatch(); }
+function openRatesForm(){
+  openModal(`<div class="m-h"><h3>Tabela de preços</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
+  <div class="m-b">
+    <p style="color:var(--ink-2);font-size:13px;margin:0 0 14px">Base do valor automático por 1.000 seguidores. Cachê individual do influenciador sobrescreve a estimativa.</p>
+    <div class="grid2">
+      <div class="field" style="margin:0"><label>Reel · R$ / 1k</label><input id="rate_reel" type="number" value="${RATE_REEL}"></div>
+      <div class="field" style="margin:0"><label>Story · R$ / 1k</label><input id="rate_story" type="number" value="${RATE_STORY}"></div>
+    </div>
+    <div class="ds-note" style="margin-top:10px">Ex.: um perfil de 100k → reel ${fmtMoney(100000/1000*RATE_REEL)}.</div>
+  </div>
+  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveRates()">Salvar</button></div>`);
+}
+async function saveRates(){ RATE_REEL=+val('rate_reel')||50; RATE_STORY=+val('rate_story')||20; try{ await sbClient().from('settings').upsert({workspace_id:WS,key:'rates',data:{reel:RATE_REEL,story:RATE_STORY}}); closeModal(); toast('Tabela de preços salva','ok'); }catch(e){ toast('Erro ao salvar','warn'); } renderInflu(); }
 
 /* ----- exportar ----- */
 function exportCsv(){
@@ -1208,20 +994,6 @@ function openInfForm(i){ i=i||{}; openModal(`<div class="m-h"><h3>${i.id?'Editar
     closeModal(); await sbUpsert('influencers',rec); await reloadRender(); toast('Perfil salvo','ok'); };
 }
 function delInf(i){ sbDelete('influencers',i.id).then(reloadRender).then(()=>toast('Influenciador removido','ok')); }
-
-function openBrandForm(b){ b=b||{}; openModal(`<div class="m-h"><h3>${b.id?'Editar marca':'Nova marca'}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
-  <div class="m-b"><div class="grid2">
-    ${field('Marca','f_name',b.name,'Nome da marca')}${selField('Status','f_status',Object.keys(BRAND_STATUS),b.status||'Prospect')}
-    ${field('Contato','f_contato',b.contato,'Nome / cargo')}${field('Último contato','f_ult',b.ult,'','date')}
-    ${field('Nicho','f_bniche',b.niche,'Moda, Beauty')}
-    ${areaField('Retorno / notas','f_bnotas',b.notas)}
-  </div></div>
-  <div class="m-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" id="saveBtn">Salvar</button></div>`);
-  document.getElementById('saveBtn').onclick=async()=>{ const name=val('f_name').trim(); if(!name)return toast('Informe o nome da marca','warn');
-    const rec={id:b.id||('b'+Date.now()),name,status:val('f_status'),contato:val('f_contato').trim(),ult:val('f_ult'),niche:val('f_bniche').trim(),notas:val('f_bnotas').trim()};
-    closeModal(); await sbUpsert('brands',rec); await reloadRender(); toast('Marca salva','ok'); };
-}
-function delBrand(b){ sbDelete('brands',b.id).then(reloadRender).then(()=>toast('Marca removida','ok')); }
 
 function openCampForm(c,onSaved){ c=c||{}; const sel=new Set(c.influs||[]);
   const roster=INF.slice().sort((a,b)=>b.followers-a.followers).map(i=>`<label class="rcard" style="cursor:pointer"><input type="checkbox" value="${esc(i.ig)}" ${sel.has(i.ig)?'checked':''} style="width:auto"><div class="rid"><div class="rh">${esc(i.ig)}</div><div class="rm">${fmtN(i.followers)} seg · ${esc(i.niche)||'—'}</div></div></label>`).join('');
@@ -1334,13 +1106,18 @@ function openProspPanel(){
   const handles=PROSP.active.handles;
   const items=handles.map(h=>{const i=INF.find(x=>x.ig===h); return i||{ig:h,followers:0,niche:'',loc:''};});
   const totReach=items.reduce((a,b)=>a+b.followers,0);
+  const totCost=items.reduce((a,b)=>a+postValue(b),0);
+  const budget=PROSP.active.budget||0;
+  const over=budget&&totCost>budget;
   document.getElementById('spTitle').innerHTML=`<span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#D97706;display:block;margin-bottom:2px">Prospecção ativa</span>${esc(PROSP.active.name)}`;
   document.getElementById('spBody').innerHTML=`
-    <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12.5px;color:var(--ink-2)">
-      <span><b class="num" style="font-size:16px;color:var(--ink)">${items.length}</b> perfis marcados</span>
-      <span><b class="num" style="font-size:16px;color:var(--ink)">${fmtN(totReach)}</b> alcance</span>
-      <span style="font-size:11px;color:var(--ink-2)">Iniciada em ${fmtDate(PROSP.active.date)}</span>
+    <div class="summary">
+      <div><div class="sv">${items.length}</div><div class="sl">no casting</div></div>
+      <div><div class="sv">${fmtN(totReach)}</div><div class="sl">alcance</div></div>
+      <div><div class="sv" style="${over?'color:var(--danger)':''}">${fmtMoney(totCost)}</div><div class="sl">custo est.${over?' · acima do orçamento':''}</div></div>
     </div>
+    <div class="ffield" style="margin-bottom:12px"><label>Orçamento da campanha (R$, opcional)</label><input id="prosp_budget" type="number" value="${budget||''}" placeholder="ex: 3000" onchange="setProspBudget(this.value)"></div>
+    <div style="font-size:11px;color:var(--ink-2);margin:-4px 0 14px">Iniciada em ${fmtDate(PROSP.active.date)}</div>
     ${items.length?`<div style="display:flex;flex-direction:column;gap:4px">${items.map(i=>{
       const [t,cl]=tierOf(i.followers);
       return `<div class="sp-item">
@@ -1358,6 +1135,7 @@ function openProspPanel(){
   document.getElementById('sidePanel').classList.add('open');
   document.getElementById('spOverlay').classList.add('open');
 }
+async function setProspBudget(v){ if(!PROSP.active)return; PROSP.active.budget=+v||0; await saveProsp(); openProspPanel(); }
 
 async function finishProsp(){
   if(!PROSP.active)return;
@@ -1461,9 +1239,6 @@ function renderDS(){
       <div class="ds-row"><span class="tier t-nano">nano</span><span class="tier t-micro">micro</span><span class="tier t-macro">macro</span><span class="tier t-mega">mega</span></div>
       <div class="ds-row" style="margin-top:14px">${avs}</div>
     </div>
-    <div class="ds-card"><h4>Status · marcas</h4>
-      <div class="ds-row">${Object.keys(BRAND_STATUS).map(s=>statusChip(s,BRAND_STATUS)).join('')}</div>
-    </div>
     <div class="ds-card"><h4>Status · campanhas + chips</h4>
       <div class="ds-row">${Object.keys(CAMP_STATUS).map(s=>statusChip(s,CAMP_STATUS)).join('')}</div>
       <div class="ds-row" style="margin-top:12px"><span class="chip">lifestyle</span><span class="chip">beauty</span>${brandTag('RN')}${brandTag('Café Norte')}</div>
@@ -1489,7 +1264,7 @@ function renderDS(){
 }
 
 /* ---------- nav ---------- */
-const TITLES={painel:["Painel","· visão geral"],influ:["Influenciadores","· carteira de talentos"],marcas:["Marcas","· funil de contato"],camp:["Campanhas","· prazos e pagamentos"],match:["Match","· montar casting"],ds:["Componentes","· referência da Direção C"]};
+const TITLES={influ:["Influenciadores","· carteira de talentos"],camp:["Campanhas","· prazos e pagamentos"],ds:["Componentes","· referência da Direção C"]};
 function go(t){
   document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.go===t));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
