@@ -243,6 +243,25 @@
   .row-acts{display:flex; gap:5px; opacity:0; transition:opacity .14s}
   tr:hover .row-acts{opacity:1}
   .due{font-family:var(--mono); font-size:12px; font-weight:600; white-space:nowrap}
+
+  /* ---- kanban de casting (dentro de uma campanha) ---- */
+  .kb-head{display:flex; align-items:center; gap:16px; margin-bottom:18px}
+  .kb-title h2{margin:0; font-size:19px; font-weight:700; letter-spacing:-.01em}
+  .kb-title .crumb{color:var(--faint); font-weight:500; font-size:12.5px; margin-top:2px}
+  .kanban{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; align-items:start}
+  .kcol{background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:11px; transition:background .15s, border-color .15s}
+  .kcol.over{background:var(--accent-tint); border-color:var(--accent)}
+  .kcol-h{display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:var(--muted); padding:4px 4px 12px; text-transform:uppercase; letter-spacing:.03em}
+  .kdot{width:8px; height:8px; border-radius:99px; flex-shrink:0}
+  .kcount{margin-left:auto; font-family:var(--mono); font-weight:600; color:var(--faint); background:var(--surface); border-radius:99px; padding:1px 8px; font-size:11px}
+  .kcol-body{display:flex; flex-direction:column; gap:8px; min-height:60px}
+  .kcard{display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 11px; cursor:grab; transition:transform .14s, box-shadow .14s, opacity .14s}
+  .kcard:hover{transform:translateY(-1px); box-shadow:0 8px 18px -14px rgba(16,20,28,.5)}
+  .kcard.dragging{opacity:.35}
+  .kcard-name{font-size:12.5px; font-weight:600}
+  .kcard-sub{font-size:11px; color:var(--muted); margin-top:1px}
+  .kcol-empty{font-size:11.5px; color:var(--faint); text-align:center; padding:16px 4px; border:1.5px dashed var(--line); border-radius:9px}
+  @media(max-width:920px){ .kanban{grid-template-columns:1fr 1fr} }
   .due.soon{color:var(--amber)} .due.late{color:var(--danger)} .due.ok{color:var(--ink-2)} .due.done{color:var(--faint)}
 
   /* ---- funil ---- */
@@ -547,6 +566,7 @@ const RAW=[
 const LOCS={REC:"Recife",JP:"João Pessoa",RJ:"Rio de Janeiro",Caruaru:"Caruaru"};
 let RATE_REEL=50, RATE_STORY=20;
 let INF=[], BRANDS=[], CAMPAIGNS=[];
+let campDetail=null; // id da campanha aberta em modo Kanban, ou null pra ver a lista
 const SEED_INF=()=>RAW.map((r,i)=>({id:'seed_i'+i,ig:r[0],followers:r[1],gen:r[2],loc:r[3],niche:r[4],brand:r[5]||""}));
 
 /* ---- dados de exemplo: marcas e campanhas (mesmos campos do produto) ---- */
@@ -570,6 +590,14 @@ const fmtDate=iso=>{if(!iso)return '—';const p=iso.split('-');return p[2]+'/'+
 const dash='<span style="color:var(--faint)">—</span>';
 const BRAND_STATUS={Prospect:'#727A87',Contatado:'#2C6E8F',Respondeu:'#B07514',Ativa:'#1B7A57','Sem retorno':'#9AA1AD',Pausada:'#C2543B'};
 const CAMP_STATUS={'A produzir':'#B07514','Conteúdo entregue':'#2C6E8F','Aguardando pagamento':'#C2543B','Pago':'#1B7A57'};
+const CASTING_STAGES=[
+  {key:'prospectando',label:'Prospectando',color:'#B07514'},
+  {key:'ativo',label:'Ativo',color:'#1B7A57'},
+  {key:'recusado',label:'Recusado',color:'#A03A52'},
+  {key:'sem_resposta',label:'Sem resposta',color:'#8A92A0'}
+];
+function etapaOf(c,ig){ return (c.etapas&&c.etapas[ig])||'prospectando'; }
+function stageMeta(key){ return CASTING_STAGES.find(s=>s.key===key)||CASTING_STAGES[0]; }
 const NF_STATUS={'Emitida':'#1B7A57','Não emitida':'#8A8F98'};
 function statusChip(s,map){const c=map[s]||'#888';return `<span class="st" style="color:${c};background:${c}1a">${esc(s||'—')}</span>`;}
 const BPAL=['#2C6E8F','#1B7A57','#7A4A63','#B07514','#546B4E','#9B5524'];
@@ -810,6 +838,11 @@ function renderMarcas(){
 
 /* ---------- CAMPANHAS ---------- */
 function renderCamp(){
+  if(campDetail){
+    const c=CAMPAIGNS.find(x=>x.id===campDetail);
+    if(c){ document.getElementById('v-camp').innerHTML=renderCampKanban(c); return; }
+    campDetail=null; // campanha não existe mais (removida) — cai pra lista
+  }
   const total=CAMPAIGNS.length;
   const abertas=CAMPAIGNS.filter(c=>c.status!=='Pago');
   const aReceber=abertas.reduce((a,b)=>a+b.valor,0);
@@ -850,7 +883,7 @@ function renderCamp(){
     <thead><tr><th>Campanha</th><th>Marca</th><th>Influenciadores</th><th>Valor</th><th>Entrega</th><th>Pagamento</th><th>Status</th><th>NF</th><th></th></tr></thead>
     <tbody>${CAMPAIGNS.map(c=>{
       const entregue=['Conteúdo entregue','Aguardando pagamento','Pago'].includes(c.status);
-      return `<tr>
+      return `<tr class="camp-row" onclick="openCampDetail('${esc(String(c.id))}')" style="cursor:pointer">
         <td><div class="cell-strong">${esc(c.titulo)}</div>${c.notas?`<div class="cell-sub">${esc(c.notas)}</div>`:''}</td>
         <td>${brandTag(c.brand)}</td>
         <td><div class="chip-row">${c.influs.map(h=>`<span class="chip">${esc(h)}</span>`).join('')}</div></td>
@@ -866,6 +899,59 @@ function renderCamp(){
       </tr>`;}).join('')}</tbody>
   </table></div></div>`;
   animateKpiNumbers(document.getElementById('v-camp'));
+}
+
+/* ---------- KANBAN de casting (dentro de uma campanha) ---------- */
+function openCampDetail(id){ campDetail=id; renderCamp(); }
+function closeCampDetail(){ campDetail=null; renderCamp(); }
+
+function renderCampKanban(c){
+  const handles=c.influs||[];
+  return `
+  <div class="kb-head">
+    <button class="btn ghost" onclick="closeCampDetail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M15 18l-6-6 6-6"/></svg>Campanhas</button>
+    <div class="kb-title">
+      <h2>${esc(c.titulo)}</h2>
+      <div class="crumb">${brandTag(c.brand)} · ${fmtMoney(c.valor)} · ${handles.length} no casting</div>
+    </div>
+  </div>
+  <div class="kanban">
+    ${CASTING_STAGES.map(st=>{
+      const items=handles.filter(h=>etapaOf(c,h)===st.key);
+      return `<div class="kcol" ondragover="kbDragOver(event)" ondragleave="kbDragLeave(event)" ondrop="kbDrop(event,'${esc(String(c.id))}','${st.key}')">
+        <div class="kcol-h"><span class="kdot" style="background:${st.color}"></span>${st.label}<span class="kcount">${items.length}</span></div>
+        <div class="kcol-body">
+          ${items.length?items.map(h=>{
+            const inf=INF.find(i=>i.ig===h);
+            return `<div class="kcard" draggable="true" ondragstart="kbDragStart(event,'${esc(h)}')" ondragend="kbDragEnd(event)">
+              ${avatar(h,inf?inf.followers:0)}
+              <div class="kcard-info">
+                <div class="kcard-name">${esc(h)}</div>
+                <div class="kcard-sub">${inf?fmtN(inf.followers)+' seg':'sem cadastro'}</div>
+              </div>
+            </div>`;
+          }).join(''):`<div class="kcol-empty">arraste um perfil aqui</div>`}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+let kbDragHandle=null;
+function kbDragStart(e,handle){ kbDragHandle=handle; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',handle);}catch(err){} e.target.closest('.kcard').classList.add('dragging'); }
+function kbDragEnd(e){ const el=e.target.closest('.kcard'); if(el)el.classList.remove('dragging'); }
+function kbDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
+function kbDragLeave(e){ e.currentTarget.classList.remove('over'); }
+async function kbDrop(e,campId,stage){
+  e.preventDefault(); e.currentTarget.classList.remove('over');
+  const handle=kbDragHandle; kbDragHandle=null;
+  if(!handle)return;
+  const c=CAMPAIGNS.find(x=>x.id===campId); if(!c)return;
+  if(etapaOf(c,handle)===stage)return;
+  c.etapas=c.etapas||{}; c.etapas[handle]=stage;
+  renderCamp();
+  try{ await sbUpsert('campaigns',c); toast(`${handle} → ${stageMeta(stage).label}`,'ok'); }
+  catch(err){ toast('Erro ao salvar, tenta de novo','warn'); }
 }
 
 /* ---------- MATCH ---------- */
@@ -1017,7 +1103,7 @@ function handleOf(h){ if(typeof h==='string'&&h.startsWith('@'))return h; const 
 const norm={
   inf:d=>({id:d.id,ig:d.ig||'',followers:+d.followers||0,gen:d.gen||'',loc:d.loc||'',niche:d.niche||'',brand:d.brand||'',tiktok:d.tiktok||'',phone:d.phone||'',email:d.email||'',cache:d.cache||'',notas:d.notas||''}),
   brand:d=>({id:d.id,name:d.name||'',status:d.status||'Prospect',niche:d.niche||'',contato:d.contato||'',ult:d.ult||d.ultimoContato||'',notas:d.notas||''}),
-  camp:d=>({id:d.id,titulo:d.titulo||'',brand:d.brand||'',influs:Array.isArray(d.influs)?d.influs.map(handleOf):[],valor:+d.valor||0,entrega:d.entrega||'',pag:d.pag||d.pagamento||'',status:d.status||'A produzir',nf:d.nf||'Não emitida',nf_date:d.nf_date||'',nf_file:d.nf_file||'',notas:d.notas||''})
+  camp:d=>({id:d.id,titulo:d.titulo||'',brand:d.brand||'',influs:Array.isArray(d.influs)?d.influs.map(handleOf):[],valor:+d.valor||0,entrega:d.entrega||'',pag:d.pag||d.pagamento||'',status:d.status||'A produzir',nf:d.nf||'Não emitida',nf_date:d.nf_date||'',nf_file:d.nf_file||'',notas:d.notas||'',etapas:(d.etapas&&typeof d.etapas==='object')?d.etapas:{}})
 };
 async function sbLoadAll(){ const c=sbClient();
   const [inf,br,ca,st]=await Promise.all([
@@ -1165,7 +1251,9 @@ function openCampForm(c){ c=c||{}; const sel=new Set(c.influs||[]);
     const btn=document.getElementById('saveBtn');
     if(rmv&&rmv.checked&&nf_file){ try{await sbClient().storage.from('notas').remove([nf_file]);}catch(e){} nf_file=''; }
     if(fileEl&&fileEl.files&&fileEl.files[0]){ btn.textContent='Enviando nota…'; btn.disabled=true; const up=await uploadNf(campId,fileEl.files[0]); btn.disabled=false; btn.textContent='Salvar'; if(up){ if(nf_file&&up!==nf_file){try{await sbClient().storage.from('notas').remove([nf_file]);}catch(e){}} nf_file=up; } else { return; } }
-    const rec={id:campId,titulo,brand:val('f_cbrand').trim(),valor:+val('f_valor')||0,status:val('f_cstatus'),entrega:val('f_entrega'),pag:val('f_pag'),nf:val('f_nf'),nf_date:val('f_nfdate'),nf_file,notas:val('f_cnotas').trim(),influs};
+    const oldEtapas=c.etapas||{};
+    const etapas={}; influs.forEach(h=>{ etapas[h]=oldEtapas[h]||'prospectando'; });
+    const rec={id:campId,titulo,brand:val('f_cbrand').trim(),valor:+val('f_valor')||0,status:val('f_cstatus'),entrega:val('f_entrega'),pag:val('f_pag'),nf:val('f_nf'),nf_date:val('f_nfdate'),nf_file,notas:val('f_cnotas').trim(),influs,etapas};
     closeModal(); await sbUpsert('campaigns',rec); await reloadRender(); toast('Campanha salva','ok'); };
 }
 function delCamp(c){ sbDelete('campaigns',c.id).then(reloadRender).then(()=>toast('Campanha removida','ok')); }
