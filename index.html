@@ -1223,7 +1223,7 @@ function openBrandForm(b){ b=b||{}; openModal(`<div class="m-h"><h3>${b.id?'Edit
 }
 function delBrand(b){ sbDelete('brands',b.id).then(reloadRender).then(()=>toast('Marca removida','ok')); }
 
-function openCampForm(c){ c=c||{}; const sel=new Set(c.influs||[]);
+function openCampForm(c,onSaved){ c=c||{}; const sel=new Set(c.influs||[]);
   const roster=INF.slice().sort((a,b)=>b.followers-a.followers).map(i=>`<label class="rcard" style="cursor:pointer"><input type="checkbox" value="${esc(i.ig)}" ${sel.has(i.ig)?'checked':''} style="width:auto"><div class="rid"><div class="rh">${esc(i.ig)}</div><div class="rm">${fmtN(i.followers)} seg · ${esc(i.niche)||'—'}</div></div></label>`).join('');
   openModal(`<div class="m-h"><h3>${c.id?'Editar campanha':'Nova campanha'}</h3><button class="m-close" onclick="closeModal()">${XICO}</button></div>
   <div class="m-b"><div class="grid2">
@@ -1254,7 +1254,7 @@ function openCampForm(c){ c=c||{}; const sel=new Set(c.influs||[]);
     const oldEtapas=c.etapas||{};
     const etapas={}; influs.forEach(h=>{ etapas[h]=oldEtapas[h]||'prospectando'; });
     const rec={id:campId,titulo,brand:val('f_cbrand').trim(),valor:+val('f_valor')||0,status:val('f_cstatus'),entrega:val('f_entrega'),pag:val('f_pag'),nf:val('f_nf'),nf_date:val('f_nfdate'),nf_file,notas:val('f_cnotas').trim(),influs,etapas};
-    closeModal(); await sbUpsert('campaigns',rec); await reloadRender(); toast('Campanha salva','ok'); };
+    closeModal(); await sbUpsert('campaigns',rec); await reloadRender(); toast('Campanha salva','ok'); if(typeof onSaved==='function')await onSaved(rec); };
 }
 function delCamp(c){ sbDelete('campaigns',c.id).then(reloadRender).then(()=>toast('Campanha removida','ok')); }
 
@@ -1350,7 +1350,8 @@ function openProspPanel(){
       </div>`;
     }).join('')}</div>`:'<p style="color:var(--ink-2);font-size:13px">Nenhum perfil marcado ainda. Clique em <b>"+ Prospectar"</b> nos cards.</p>'}
     <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" style="background:#D97706;border-color:#D97706;color:#fff" onclick="finishProsp()">Finalizar prospecção</button>
+      <button class="btn" onclick="prospToCamp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:15px;height:15px;stroke-width:2"><path d="M3 11l14-6v14L3 13z"/><path d="M17 7a3 3 0 0 1 0 6"/></svg>Virar campanha</button>
+      <button class="btn ghost" style="color:#D97706;border-color:#D97706" onclick="finishProsp()">Só arquivar</button>
       <button class="btn ghost" onclick="cancelProsp()">Cancelar prospecção</button>
       ${PROSP.history.length?`<button class="btn ghost" onclick="showProspHistory()" style="margin-left:auto">Histórico (${PROSP.history.length})</button>`:''}
     </div>`;
@@ -1365,6 +1366,23 @@ async function finishProsp(){
   if(PROSP.history.length>50) PROSP.history=PROSP.history.slice(0,50);
   PROSP.active=null;
   await saveProsp(); closeSidePanel(); renderInflu(); toast('Prospecção finalizada e salva no histórico','ok');
+}
+
+function prospToCamp(){
+  if(!PROSP.active)return;
+  if(!PROSP.active.handles.length)return toast('Marque pelo menos um perfil antes','warn');
+  const handles=PROSP.active.handles.slice();
+  const prospName=PROSP.active.name, prospDate=PROSP.active.date;
+  const sel=INF.filter(i=>handles.includes(i.ig));
+  const valor=sel.reduce((a,b)=>a+postValue(b),0);
+  closeSidePanel();
+  openCampForm({titulo:prospName, influs:handles, valor, status:'A produzir'}, async()=>{
+    PROSP.history.unshift({name:prospName, date:prospDate, finished:new Date().toISOString().slice(0,10), handles, count:handles.length});
+    if(PROSP.history.length>50) PROSP.history=PROSP.history.slice(0,50);
+    PROSP.active=null;
+    await saveProsp(); renderInflu();
+    toast('Prospecção virou a campanha "'+prospName+'"','ok');
+  });
 }
 
 async function cancelProsp(){
